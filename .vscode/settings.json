@@ -6,7 +6,10 @@
         "stdio.h": "c",
         "serial.h": "c",
         "printf.h": "c",
-        "mem.h": "c"
+        "mem.h": "c",
+        "cpu.h": "c",
+        "vga.h": "c",
+        "stdbool.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

@@ -76,8 +76,8 @@ void nighterm_refresh()
     {
         for (col = 0; col < term.cols; col++)
         {
-            char ch = term.buffer[row * term.cols + col];
-            nighterm_render_char(row, col, ch);
+            ColorCell cell = term.buffer[row * term.cols + col];
+            nighterm_render_char(row, col, cell.ascii);
         }
     }
 }
@@ -94,8 +94,20 @@ void nighterm_write(char ch)
     size_t buffer_size = (size_t)term.rows * term.cols;
     nighterm_redraw();
 
-    char ch = cell.ascii;
-    ColorCell decodedCell = decode(cell); // Decode the combined value
+
+    ColorCell cell = {};
+    cell.ascii = ch;
+    
+    cell.fgColor.red = fg_r;
+    cell.fgColor.green = fg_g;
+    cell.fgColor.blue = fg_b;
+    
+    cell.bgColor.red = bg_r;
+    cell.bgColor.green = bg_g;
+    cell.bgColor.blue = bg_b;
+
+    unsigned long long encodedCell = encode(cell);
+    ColorCell decodedCell = decode(encodedCell); // Decode the combined value
 
     // Set foreground and background colors
     nighterm_set_char_fg(decodedCell.fgColor.red, decodedCell.fgColor.green, decodedCell.fgColor.blue);
@@ -118,7 +130,7 @@ void nighterm_write(char ch)
         break; // ignore termination
     default:
         int bufferIndex = term.curY * term.cols + term.curX;
-        term.buffer[bufferIndex] = ch;
+        term.buffer[bufferIndex].ascii = ch;
         nighterm_render_char(term.curY, term.curX, ch);
         term.curX++;
         if (term.curX - 1 == term.cols)
@@ -140,7 +152,7 @@ void nighterm_move_cursor(int row, int col)
 void nighterm_redraw()
 {
     int bufferIndex = term.curY * term.cols + term.curX;
-    nighterm_render_char(term.curY, term.curX, term.buffer[bufferIndex]);
+    nighterm_render_char(term.curY, term.curX, term.buffer[bufferIndex].ascii);
 }
 
 void nighterm_do_curinv()
