@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "color.h": "c",
+        "nighterm.h": "c",
+        "psf.h": "c",
+        "stdio.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "enabled"
+}
