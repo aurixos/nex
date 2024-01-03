@@ -38,7 +38,7 @@ $(eval $(call DEFAULT_VAR,NASMFLAGS,$(DEFAULT_NASMFLAGS)))
 override DEFAULT_LDFLAGS :=
 $(eval $(call DEFAULT_VAR,LDFLAGS,$(DEFAULT_LDFLAGS)))
 
-override CFLAGS += -O0 -Ilimine -Inighterm -Isrc/limine -Isrc -Wall -Wextra -std=gnu11 -ffreestanding -fno-stack-protector -fno-stack-check -fno-lto -fno-PIE -fno-PIC -m64 -march=x86-64 -mabi=sysv -mcmodel=kernel -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -DPRINTF_DISABLE_SUPPORT_FLOAT -DHEAP_ACCESSABLE
+override CFLAGS += -O0 -Ilimine -Isrc -Wall -Wextra -std=gnu11 -ffreestanding -fno-stack-protector -fno-stack-check -fno-lto -fno-PIE -fno-PIC -m64 -march=x86-64 -mabi=sysv -mcmodel=kernel -mno-80387 -mno-mmx -mno-sse -mno-sse2 -mno-red-zone -DPRINTF_DISABLE_SUPPORT_FLOAT -DHEAP_ACCESSABLE
 
 override LDFLAGS += -nostdlib -static -m elf_x86_64 -z max-page-size=0x1000 -T linker.ld
 
@@ -46,9 +46,9 @@ override CPPFLAGS := -I. $(CPPFLAGS) -MMD -MP
 
 override NASMFLAGS += -Wall -f elf64
 
-override CFILES := $(shell cd src && find -L * -type f \( -path ./limine -o -path ./nightertm \) -prune -o -name '*.c' -print)
-override ASFILES := $(shell cd src && find -L * -type f \( -path ./limine -o -path ./nightertm \) -prune -o -name '*.S' -print)
-override NASMFILES := $(shell cd src && find -L * -type f \( -path ./limine -o -path ./nightertm \) -prune -o -name '*.asm' -print)
+override CFILES := $(shell cd src && find -L * -type f -name '*.c')
+override ASFILES := $(shell cd src && find -L * -type f -name '*.S')
+override NASMFILES := $(shell cd src && find -L * -type f -name '*.asm')
 override OBJ := $(addprefix obj/,$(CFILES:.c=.c.o) $(ASFILES:.S=.S.o) $(NASMFILES:.asm=.asm.o))
 override HEADER_DEPS := $(addprefix obj/,$(CFILES:.c=.c.d) $(ASFILES:.S=.S.d))
 
