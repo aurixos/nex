@@ -1,10 +1,6 @@
 #ifndef NIGHTERM_H_
 #define NIGHTERM_H_
 
-#ifndef NIGHTERM_LIMINE
-#include <limine.h>
-#endif
-
 #include "backends/vga.h"
 #include "backends/color.h"
 
@@ -44,9 +40,35 @@ struct Terminal {
     char* title;
 };
 
+enum nighterm_init_return_codes {
+    NIGHTERM_NO_FONT_SUPPLIED = 1,
+    NIGHTERM_FONT_INVALID = 2,
+    NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = 3,
+    NIGHTERM_INVALID_FRAMEBUFFER_SIZE = 4,
+    NIGHTERM_INVALID_FRAMEBUFFER_PITCH = 5,
+    NIGHTERM_INVALID_FRAMEBUFFER_BPP = 6,
+
+    NIGHTERM_SUCCESS = 0
+};
+
+struct nighterm_fbinfo {
+    void *addr;
+    uint64_t width;
+    uint64_t height;
+    uint64_t pitch;
+    uint16_t bpp;
+};
+
 extern struct Terminal term;
 
-int init_nighterm(struct limine_file* font);
+extern struct nighterm_fbinfo fbinfo;
+
+int init_nighterm(void *font,
+                void *framebuffer_addr,
+                uint64_t framebuffer_width,
+                uint64_t framebuffer_height,
+                uint64_t framebuffer_pitch,
+                uint16_t framebuffer_bpp);
 void nighterm_refresh();
 void nighterm_clear();
 void nighterm_set_char_fg(uint8_t r, uint8_t b, uint8_t g);
