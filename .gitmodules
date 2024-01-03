@@ -1,0 +1,3 @@
+[submodule "example/Nighterm"]
+	path = example/Nighterm
+	url = https://github.com/KevinAlavik/Nighterm
