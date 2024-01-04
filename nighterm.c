@@ -1,5 +1,6 @@
 #include "nighterm.h"
 #include <string.h>
+#include <luxe.h>
 
 struct nighterm_fbinfo fbinfo = {0};
 
@@ -20,7 +21,8 @@ int nighterm_initialize(void *font,
                 uint64_t framebuffer_width,
                 uint64_t framebuffer_height,
                 uint64_t framebuffer_pitch,
-                uint16_t framebuffer_bpp)
+                uint16_t framebuffer_bpp,
+                void *(*custom_malloc)(size_t))
 {
     if (font == NULL) {
         /* No font supplied. */
@@ -46,20 +48,31 @@ int nighterm_initialize(void *font,
         /* Invalid framebuffer BPP. */
         return NIGHTERM_INVALID_FRAMEBUFFER_BPP;
     }
+
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+    if (nighterm_malloc == NULL) {
+        return NIGHTERM_MALLOC_IS_NULL;
+    }
+    nighterm_malloc = custom_malloc;
+    term.buffer = nighterm_malloc(framebuffer_height * framebuffer_width * (framebuffer_bpp >> 3));
+#else
+    (void)custom_malloc;
+#endif
     
     char *psf2buf = font;
     psf2Hdr hdr = *(psf2Hdr *)font;
     psf2buf += hdr.headerSize;
 
-    if (PSF_MODE == 2 || PSF_MODE == 1 ? (hdr.magic[0] != PSF_MAGIC0 || hdr.magic[1] != PSF_MAGIC1 || hdr.magic[2] != PSF_MAGIC2 || hdr.magic[3] != PSF_MAGIC3) : 0)
+    if (PSF_MODE == 2 || PSF_MODE == 1 ? (hdr.magic[0] != PSF_MAGIC0 || hdr.magic[1] != PSF_MAGIC1 || hdr.magic[2] != PSF_MAGIC2 || hdr.magic[3] != PSF_MAGIC3) : 0) {
         return NIGHTERM_FONT_INVALID;
+    }
 
-    term.fonthdr = hdr;
-    term.fontData = psf2buf;
+    term.font_header = hdr;
+    term.font_data = psf2buf;
     term.rows = (fbinfo.height / hdr.height);
     term.cols = (fbinfo.width / hdr.width);
-    term.curX = 0;
-    term.curY = 0;
+    term.cx = 0;
+    term.cy = 0;
     term.title = "Nighterm";
 
     fbinfo.addr = framebuffer_addr;
@@ -67,8 +80,6 @@ int nighterm_initialize(void *font,
     fbinfo.height = framebuffer_height;
     fbinfo.pitch = framebuffer_pitch;
     fbinfo.bpp = framebuffer_bpp;
-
-    nighterm_clear();
 
     return NIGHTERM_SUCCESS;
 }
@@ -88,53 +99,27 @@ void nighterm_set_char_bg(uint8_t r, uint8_t b, uint8_t g)
 
 void nighterm_render_char(int row, int col, char ch)
 {
-    int rounding = ((term.fonthdr.width % 8) != 0) ^ (term.fonthdr.width == 9);
-    uint8_t *glyph = term.fontData + ch * term.fonthdr.charSize;
+    int rounding = ((term.font_header.width % 8) != 0) ^ (term.font_header.width == 9);
+    uint8_t *glyph = term.font_data + ch * term.font_header.charSize;
 
-    for (size_t y = 0; y < term.fonthdr.height; y++)
+    for (size_t y = 0; y < term.font_header.height; y++)
     {
-        for (size_t x = 0; x < term.fonthdr.width; x++)
+        for (size_t x = 0; x < term.font_header.width; x++)
         {
-            if ((glyph[y * ((term.fonthdr.width / 8) + rounding) + x / 8] >> (7 - x % 8)) & 1)
+            if ((glyph[y * ((term.font_header.width / 8) + rounding) + x / 8] >> (7 - x % 8)) & 1)
             {
-                nighterm_putpixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, fg_r, fg_g, fg_b);
+                nighterm_putpixel(col * term.font_header.width + x, row * term.font_header.height + y, fg_r, fg_g, fg_b);
             }
             else
             {
-                nighterm_putpixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, bg_r, bg_g, bg_b);
+                nighterm_putpixel(col * term.font_header.width + x, row * term.font_header.height + y, bg_r, bg_g, bg_b);
             }
         }
     }
-}
-
-void nighterm_refresh()
-{
-    // Note: do not overuse this function since refreshing one character at a time is much mre efficient
-    term.curX = 0;
-    term.curY = 0;
-    int row, col;
-    for (row = 0; row < term.rows; row++)
-    {
-        for (col = 0; col < term.cols; col++)
-        {
-            ColorCell cell = term.buffer[row * term.cols + col];
-            nighterm_render_char(row, col, cell.ascii);
-        }
-    }
-}
-
-void nighterm_clear()
-{
-    size_t buffer_size = (size_t)term.rows * term.cols;
-    memset(term.buffer, ' ', buffer_size);
-    nighterm_refresh();
 }
 
 void nighterm_write(char ch)
 {
-    nighterm_redraw();
-
-
     ColorCell cell = {};
     cell.ascii = ch;
     
@@ -156,39 +141,27 @@ void nighterm_write(char ch)
     switch (ch)
     {
     case '\n':
-        term.curX = 0;
-        term.curY++;
+        term.cx = 0;
+        term.cy++;
         break;
     case '\t':
-        term.curX += INDENT_AMOUNT - (term.curX % INDENT_AMOUNT);
+        term.cx += INDENT_AMOUNT - (term.cx % INDENT_AMOUNT);
         break;
     case '\b':
-        term.curX -= 1;
+    nighterm_render_char(term.cy, term.cx, ' ');
+        term.cx -= 1;
         break;
     case 0:
         break; // ignore termination
     default:
-        int bufferIndex = term.curY * term.cols + term.curX;
-        term.buffer[bufferIndex].ascii = ch;
-        nighterm_render_char(term.curY, term.curX, ch);
-        term.curX++;
-        if (term.curX - 1 == term.cols)
-        {
-            term.curY++;
-        }
+        // Why does this not work???
+        // if (term.cx >= term.cols)
+        // {
+            // term.cx = 0;
+            // term.cy++;
+        // }
+        nighterm_render_char(term.cy, term.cx, ch);
+        term.cx++;
         break;
     }
-}
-
-void nighterm_move_cursor(int row, int col)
-{
-    nighterm_redraw();
-    term.curX = col;
-    term.curY = row;
-}
-
-void nighterm_redraw()
-{
-    int bufferIndex = term.curY * term.cols + term.curX;
-    nighterm_render_char(term.curY, term.curX, term.buffer[bufferIndex].ascii);
 }
