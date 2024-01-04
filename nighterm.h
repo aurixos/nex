@@ -63,7 +63,7 @@ extern struct Terminal term;
 
 extern struct nighterm_fbinfo fbinfo;
 
-int init_nighterm(void *font,
+int nighterm_initialize(void *font,
                 void *framebuffer_addr,
                 uint64_t framebuffer_width,
                 uint64_t framebuffer_height,
@@ -74,6 +74,7 @@ void nighterm_clear();
 void nighterm_set_char_fg(uint8_t r, uint8_t b, uint8_t g);
 void nighterm_set_char_bg(uint8_t r, uint8_t b, uint8_t g);
 void nighterm_write(char ch);
+void nighterm_redraw();
 void nighterm_move_cursor(int row, int col);
 
 #endif // NIGHTERM_H_

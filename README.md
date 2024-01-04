@@ -18,7 +18,7 @@ static struct limine_framebuffer framebuffer_response;
 
 framebuffer_response = framebuffer_request.response;
 
-init_nighterm(psf2_buffer,
+nighterm_init(psf2_buffer,
                 framebuffer_request->address,
                 framebuffer_request->width,
                 framebuffer_request->height,
@@ -34,6 +34,7 @@ You can find a list of possible return codes in [nighterm.h](nighterm.h).
 - If `NULL` is passed into the font parameter, use a builtin font instead.
 
 # Credits
-- [lolguy91](https://github.com/lolguy91):
-  - Made the majority of the old version
-  - Made the PSFv2 loader
+
+Nighterm Extended is a fork of [Nighterm](https://github.com/KevinAlavik/Nighterm) written (and maintained) by [puffer](https://github.com/KevinAlavik).
+
+This software is released under the GPLv3 license.

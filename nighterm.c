@@ -1,6 +1,7 @@
 #include "nighterm.h"
+#include <string.h>
 
-static struct nighterm_fbinfo fbinfo = {0};
+struct nighterm_fbinfo fbinfo = {0};
 
 struct Terminal term;
 uint8_t fg_r = 255;
@@ -14,7 +15,7 @@ uint8_t bg_b = 0;
 /**
  * Font points to a PSF2 file buffer
  */
-int init_nighterm(void *font,
+int nighterm_initialize(void *font,
                 void *framebuffer_addr,
                 uint64_t framebuffer_width,
                 uint64_t framebuffer_height,
@@ -53,11 +54,10 @@ int init_nighterm(void *font,
     if (PSF_MODE == 2 || PSF_MODE == 1 ? (hdr.magic[0] != PSF_MAGIC0 || hdr.magic[1] != PSF_MAGIC1 || hdr.magic[2] != PSF_MAGIC2 || hdr.magic[3] != PSF_MAGIC3) : 0)
         return NIGHTERM_FONT_INVALID;
 
-    size_t buffer_size = (size_t)(getScreenWidth() / hdr.width) * (getScreenHeight() / hdr.height);
     term.fonthdr = hdr;
     term.fontData = psf2buf;
-    term.rows = (getScreenHeight() / hdr.height);
-    term.cols = (getScreenWidth() / hdr.width);
+    term.rows = (fbinfo.height / hdr.height);
+    term.cols = (fbinfo.width / hdr.width);
     term.curX = 0;
     term.curY = 0;
     term.title = "Nighterm";
@@ -69,7 +69,6 @@ int init_nighterm(void *font,
     fbinfo.bpp = framebuffer_bpp;
 
     nighterm_clear();
-    nighterm_do_curinv();
 
     return NIGHTERM_SUCCESS;
 }
@@ -98,11 +97,11 @@ void nighterm_render_char(int row, int col, char ch)
         {
             if ((glyph[y * ((term.fonthdr.width / 8) + rounding) + x / 8] >> (7 - x % 8)) & 1)
             {
-                draw_pixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, fg_r, fg_g, fg_b);
+                nighterm_putpixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, fg_r, fg_g, fg_b);
             }
             else
             {
-                draw_pixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, bg_r, bg_g, bg_b);
+                nighterm_putpixel(col * term.fonthdr.width + x, row * term.fonthdr.height + y, bg_r, bg_g, bg_b);
             }
         }
     }
@@ -133,7 +132,6 @@ void nighterm_clear()
 
 void nighterm_write(char ch)
 {
-    size_t buffer_size = (size_t)term.rows * term.cols;
     nighterm_redraw();
 
 
@@ -168,7 +166,6 @@ void nighterm_write(char ch)
         term.curX -= 1;
         break;
     case 0:
-        nighterm_do_curinv();
         break; // ignore termination
     default:
         int bufferIndex = term.curY * term.cols + term.curX;
@@ -179,7 +176,6 @@ void nighterm_write(char ch)
         {
             term.curY++;
         }
-        nighterm_do_curinv();
         break;
     }
 }
@@ -189,43 +185,10 @@ void nighterm_move_cursor(int row, int col)
     nighterm_redraw();
     term.curX = col;
     term.curY = row;
-    nighterm_do_curinv();
 }
+
 void nighterm_redraw()
 {
     int bufferIndex = term.curY * term.cols + term.curX;
     nighterm_render_char(term.curY, term.curX, term.buffer[bufferIndex].ascii);
-}
-
-void nighterm_do_curinv()
-{
-    uint8_t tmp_r = 0;
-    uint8_t tmp_g = 0;
-    uint8_t tmp_b = 0;
-
-    tmp_r = bg_r;
-    tmp_g = bg_g;
-    tmp_b = bg_b;
-
-    bg_r = fg_r;
-    bg_g = fg_g;
-    bg_b = fg_b;
-
-    fg_r = tmp_r;
-    fg_g = tmp_g;
-    fg_b = tmp_b;
-
-    nighterm_redraw();
-
-    tmp_r = bg_r;
-    tmp_g = bg_g;
-    tmp_b = bg_b;
-
-    bg_r = fg_r;
-    bg_g = fg_g;
-    bg_b = fg_b;
-
-    fg_r = tmp_r;
-    fg_g = tmp_g;
-    fg_b = tmp_b;
 }
