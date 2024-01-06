@@ -1,6 +1,4 @@
 #include "nighterm.h"
-#include <string.h>
-#include <luxe.h>
 
 struct nighterm_fbinfo fbinfo = {0};
 
