@@ -921,11 +921,6 @@ int nighterm_initialize(void *font,
                 uint16_t framebuffer_bpp,
                 void *(*custom_malloc)(size_t))
 {
-    if (font == NULL) {
-        /* No font supplied, use the default one. */
-        font = &default_font;
-    }
-
     if (framebuffer_addr == NULL) {
         /* No framebuffer specified, or invalid address. */
         return NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS;
@@ -944,6 +939,11 @@ int nighterm_initialize(void *font,
     if (framebuffer_bpp != 32) {
         /* Invalid framebuffer BPP. */
         return NIGHTERM_INVALID_FRAMEBUFFER_BPP;
+    }
+
+    if (font == NULL) {
+        /* No font supplied, use the default one. */
+        font = &default_font;
     }
 
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
@@ -1017,7 +1017,7 @@ void nighterm_render_char(int row, int col, char ch)
 
 void nighterm_write(char ch)
 {
-    ColorCell cell = {};
+    ColorCell cell = {0};
     cell.ascii = ch;
     
     cell.fgColor.red = fg_r;
@@ -1045,7 +1045,8 @@ void nighterm_write(char ch)
         term.cx += INDENT_AMOUNT - (term.cx % INDENT_AMOUNT);
         break;
     case '\b':
-    nighterm_render_char(term.cy, term.cx, ' ');
+        // TODO: Scroll one line up if cx == 0
+        nighterm_render_char(term.cy, term.cx, ' ');
         term.cx -= 1;
         break;
     case 0:
