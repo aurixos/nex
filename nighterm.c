@@ -1017,24 +1017,6 @@ void nighterm_render_char(int row, int col, char ch)
 
 void nighterm_write(char ch)
 {
-    ColorCell cell = {0};
-    cell.ascii = ch;
-    
-    cell.fgColor.red = fg_r;
-    cell.fgColor.green = fg_g;
-    cell.fgColor.blue = fg_b;
-    
-    cell.bgColor.red = bg_r;
-    cell.bgColor.green = bg_g;
-    cell.bgColor.blue = bg_b;
-
-    unsigned long long encodedCell = encode(cell);
-    ColorCell decodedCell = decode(encodedCell); // Decode the combined value
-
-    // Set foreground and background colors
-    nighterm_set_char_fg(decodedCell.fgColor.red, decodedCell.fgColor.green, decodedCell.fgColor.blue);
-    nighterm_set_char_bg(decodedCell.bgColor.red, decodedCell.bgColor.green, decodedCell.bgColor.blue);
-
     switch (ch)
     {
     case '\n':
@@ -1055,10 +1037,14 @@ void nighterm_write(char ch)
         // Why does this not work???
         // if (term.cx >= term.cols)
         // {
-            // term.cx = 0;
-            // term.cy++;
+        //     term.cx = 0;
+        //     term.cy++;
         // }
+        nighterm_set_char_bg(bg_r, bg_g, bg_b);
+        nighterm_set_char_fg(fg_r, fg_g, fg_b);
         nighterm_render_char(term.cy, term.cx, ch);
+        nighterm_set_char_bg(bg_r, bg_g, bg_b);
+        nighterm_set_char_fg(fg_r, fg_g, fg_b);
         term.cx++;
         break;
     }
