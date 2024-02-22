@@ -30,14 +30,20 @@ typedef struct {
 struct nighterm_terminal {
     psf2Hdr font_header;
     void *font_data;
+
     uint8_t cur_x;
     uint8_t cur_y;
+
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
     uint32_t *buffer;
 #else
     uint32_t buffer[4096*4];
 #endif
+
     char* title;
+
+    uint32_t fg_color;
+    uint32_t bg_color;
 };
 
 enum nighterm_init_return_codes {
@@ -80,6 +86,9 @@ void nighterm_clear();
 void nighterm_write(char ch);
 void nighterm_redraw();
 void nighterm_move_cursor(int row, int col);
+
+void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
+void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
 
 typedef void *(*nighterm_malloc)(size_t);
 

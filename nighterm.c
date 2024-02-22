@@ -458,6 +458,8 @@ int nighterm_initialize(void *font,
     config.terminal[config.current_terminal].cur_x = 0;
     config.terminal[config.current_terminal].cur_y = 0;
     config.terminal[config.current_terminal].title = "Nighterm Extended";
+    config.terminal[config.current_terminal].fg_color = 0xFFFFFFFF;
+    config.terminal[config.current_terminal].bg_color = 0xFF000000;
 
     #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
     if (nighterm_malloc == NULL) {
@@ -472,12 +474,22 @@ int nighterm_initialize(void *font,
     return NIGHTERM_SUCCESS;
 }
 
+void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b)
+{
+    config.terminal[config.current_terminal].fg_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
+}
+
+void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b)
+{
+    config.terminal[config.current_terminal].bg_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
+}
+
 void nighterm_putpixel(uint64_t x, uint64_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) + y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
-void nighterm_flush(uint16_t red, uint16_t green, uint16_t blue)
+void nighterm_flush(uint8_t red, uint8_t green, uint8_t blue)
 {
     for (uint64_t y = 0; y < config.fb_height; y++) {
         for (uint64_t x = 0; x < config.fb_width; x++) {
@@ -497,11 +509,17 @@ void nighterm_render_char(int row, int col, char ch)
         {
             if ((glyph[y * ((config.terminal[config.current_terminal].font_header.width / 8) + rounding) + x / 8] >> (7 - x % 8)) & 1)
             {
-                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, 255, 255, 255);
+                uint8_t r = (uint8_t)(config.terminal[config.current_terminal].fg_color >> 16) & 0xFF;
+                uint8_t g = (uint8_t)(config.terminal[config.current_terminal].fg_color >> 8) & 0xFF;
+                uint8_t b = (uint8_t)config.terminal[config.current_terminal].fg_color;
+                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
             }
             else
             {
-                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, 0, 0, 0);
+                uint8_t r = (uint8_t)config.terminal[config.current_terminal].bg_color >> 16 & 0xFF;
+                uint8_t g = (uint8_t)config.terminal[config.current_terminal].bg_color >> 8 & 0xFF;
+                uint8_t b = (uint8_t)config.terminal[config.current_terminal].bg_color;
+                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
             }
         }
     }
