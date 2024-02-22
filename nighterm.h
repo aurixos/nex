@@ -1,8 +1,8 @@
 #ifndef NIGHTERM_H_
 #define NIGHTERM_H_
 
-#include "backends/vga.h"
-#include "backends/color.h"
+#include <stdint.h>
+#include <stddef.h>
 
 #define INDENT_AMOUNT 4
 
@@ -27,13 +27,11 @@ typedef struct {
     uint32_t height, width;
 } __attribute__((packed)) psf2Hdr;
 
-struct Terminal {
+struct nighterm_terminal {
     psf2Hdr font_header;
     void *font_data;
-    uint8_t cx;
-    uint8_t cy;
-    uint32_t rows;
-    uint32_t cols;
+    uint8_t cur_x;
+    uint8_t cur_y;
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
     uint32_t *buffer;
 #else
@@ -43,7 +41,6 @@ struct Terminal {
 };
 
 enum nighterm_init_return_codes {
-    NIGHTERM_NO_FONT_SUPPLIED = 1,
     NIGHTERM_FONT_INVALID = 2,
 
     NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = 3,
@@ -56,17 +53,20 @@ enum nighterm_init_return_codes {
     NIGHTERM_SUCCESS = 0
 };
 
-struct nighterm_fbinfo {
-    void *addr;
-    uint64_t width;
-    uint64_t height;
-    uint64_t pitch;
-    uint16_t bpp;
+struct nighterm_config {
+    void *fb_addr;
+    uint64_t fb_width;
+    uint64_t fb_height;
+    uint64_t fb_pitch;
+    uint16_t fb_bpp;
+
+    uint32_t terminal_rows;
+    uint32_t terminal_cols;
+
+    /* we have only one terminal for now... */
+    struct nighterm_terminal terminal[1];
+    uint8_t current_terminal;
 };
-
-extern struct Terminal term;
-
-extern struct nighterm_fbinfo fbinfo;
 
 int nighterm_initialize(void *font,
                 void *framebuffer_addr,
@@ -77,8 +77,6 @@ int nighterm_initialize(void *font,
                 void *(*custom_malloc)());
 void nighterm_refresh();
 void nighterm_clear();
-void nighterm_set_char_fg(uint8_t r, uint8_t b, uint8_t g);
-void nighterm_set_char_bg(uint8_t r, uint8_t b, uint8_t g);
 void nighterm_write(char ch);
 void nighterm_redraw();
 void nighterm_move_cursor(int row, int col);
