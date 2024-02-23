@@ -74,22 +74,19 @@ struct nighterm_config {
     uint8_t current_terminal;
 };
 
-int nighterm_initialize(void *font,
-                void *framebuffer_addr,
-                uint64_t framebuffer_width,
-                uint64_t framebuffer_height,
-                uint64_t framebuffer_pitch,
-                uint16_t framebuffer_bpp,
-                void *(*custom_malloc)());
-void nighterm_refresh();
-void nighterm_clear();
+typedef void *(*nighterm_malloc)(size_t);
+
+int nighterm_initialize(void *font, void *framebuffer_addr,
+                        uint64_t framebuffer_width, uint64_t framebuffer_height,
+                        uint64_t framebuffer_pitch, uint16_t framebuffer_bpp,
+                        void *(*custom_malloc)());
+
 void nighterm_write(char ch);
-void nighterm_redraw();
-void nighterm_move_cursor(int row, int col);
+void nighterm_flush(uint8_t r, uint8_t g, uint8_t b);
 
 void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
 void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
 
-typedef void *(*nighterm_malloc)(size_t);
+void nighterm_set_cursor_position(uint32_t x, uint32_t y);
 
 #endif // NIGHTERM_H_

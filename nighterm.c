@@ -484,16 +484,22 @@ void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b)
     config.terminal[config.current_terminal].bg_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
+void nighterm_set_cursor_position(uint32_t x, uint32_t y)
+{
+    config.terminal[config.current_terminal].cur_x = x;
+    config.terminal[config.current_terminal].cur_y = y;
+}
+
 void nighterm_putpixel(uint64_t x, uint64_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) + y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
-void nighterm_flush(uint8_t red, uint8_t green, uint8_t blue)
+void nighterm_flush(uint8_t r, uint8_t g, uint8_t b)
 {
     for (uint64_t y = 0; y < config.fb_height; y++) {
         for (uint64_t x = 0; x < config.fb_width; x++) {
-            nighterm_putpixel(x,y, red, green, blue);
+            nighterm_putpixel(x,y, r, g, b);
         }
     }
 }
@@ -516,8 +522,8 @@ void nighterm_render_char(int row, int col, char ch)
             }
             else
             {
-                uint8_t r = (uint8_t)config.terminal[config.current_terminal].bg_color >> 16 & 0xFF;
-                uint8_t g = (uint8_t)config.terminal[config.current_terminal].bg_color >> 8 & 0xFF;
+                Xuint8_t r = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 16) & 0xFF;
+                uint8_t g = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 8) & 0xFF;
                 uint8_t b = (uint8_t)config.terminal[config.current_terminal].bg_color;
                 nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
             }
