@@ -522,7 +522,7 @@ void nighterm_render_char(int row, int col, char ch)
             }
             else
             {
-                Xuint8_t r = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 16) & 0xFF;
+                uint8_t r = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 16) & 0xFF;
                 uint8_t g = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 8) & 0xFF;
                 uint8_t b = (uint8_t)config.terminal[config.current_terminal].bg_color;
                 nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
