@@ -6,8 +6,6 @@
 
 #define INDENT_AMOUNT 4
 
-#ifndef PSF2_MODE
-
 #define PSF_MODE 2
 
 #define PSF_MAGIC0 0x72
@@ -15,8 +13,9 @@
 #define PSF_MAGIC2 0x4a
 #define PSF_MAGIC3 0x86
 
-#endif
-
+/**
+ * @brief PSF2 file header.
+ */
 typedef struct {
     uint8_t magic[4];
     uint32_t version;
@@ -27,6 +26,9 @@ typedef struct {
     uint32_t height, width;
 } __attribute__((packed)) psf2Hdr;
 
+/**
+ * @brief Nighterm Terminal object.
+ */
 struct nighterm_terminal {
     psf2Hdr font_header;
     void *font_data;
@@ -87,6 +89,8 @@ void nighterm_flush(uint8_t r, uint8_t g, uint8_t b);
 void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
 void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
 
+void nighterm_get_cursor_position(uint32_t *x, uint32_t *y);
 void nighterm_set_cursor_position(uint32_t x, uint32_t y);
+void nighterm_move_cursor(int32_t x, int32_t y);
 
 #endif // NIGHTERM_H_

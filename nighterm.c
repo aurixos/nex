@@ -490,6 +490,18 @@ void nighterm_set_cursor_position(uint32_t x, uint32_t y)
     config.terminal[config.current_terminal].cur_y = y;
 }
 
+void nighterm_move_cursor(int32_t x, int32_t y)
+{
+  config.terminal[config.current_terminal].cur_x += x;
+  config.terminal[config.current_terminal].cur_y += y;
+}
+
+void nighterm_get_cursor_position(uint32_t *x, uint32_t *y)
+{
+  *x = config.terminal[config.current_terminal].cur_x;
+  *y = config.terminal[config.current_terminal].cur_y;
+}
+
 void nighterm_putpixel(uint64_t x, uint64_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) + y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
