@@ -20,6 +20,22 @@
 #define PSF_MAGIC2 0x4a
 #define PSF_MAGIC3 0x86
 
+#ifndef NIGHTERM_MAX_TERMINALS
+#define NIGHTERM_MAX_TERMINALS 4
+#endif
+
+#define NIGHTERM_MAX_RESOLUTION (1920 * 1080)
+
+/**
+ * @brief Memory allocator function pointer.
+ */
+typedef void* (*nighterm_malloc)(size_t);
+
+/**
+ * @brief Memory allocator function pointer.
+ */
+typedef void (*nighterm_free)(void*);
+
 /**
  * @brief PSF2 file header.
  */
@@ -39,19 +55,21 @@ typedef struct
  */
 struct nighterm_terminal
 {
+  char* name;
   psf2Hdr font_header;
   void* font_data;
 
   uint8_t cur_x;
   uint8_t cur_y;
 
-#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
-  uint32_t* buffer;
-#else
-  uint32_t buffer[4096 * 4];
-#endif
+  uint32_t rows;
+  uint32_t cols;
 
-  char* title;
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+  uint32_t* backbuffer;
+#else
+  uint32_t backbuffer[1920 * (4 * 1080)];
+#endif
 
   uint32_t fg_color;
   uint32_t bg_color;
@@ -60,16 +78,18 @@ struct nighterm_terminal
 /**
  * @brief Return codes
  */
-enum nighterm_init_return_codes
+enum nighterm_status
 {
-  NIGHTERM_FONT_INVALID = 2,
+  NIGHTERM_MALLOC_IS_NULL = 1,
 
-  NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = 3,
-  NIGHTERM_INVALID_FRAMEBUFFER_SIZE = 4,
-  NIGHTERM_INVALID_FRAMEBUFFER_PITCH = 5,
-  NIGHTERM_INVALID_FRAMEBUFFER_BPP = 6,
+  NIGHTERM_FONT_INVALID = -2,
 
-  NIGHTERM_MALLOC_IS_NULL = 7,
+  NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = -3,
+  NIGHTERM_INVALID_FRAMEBUFFER_SIZE = -4,
+  NIGHTERM_INVALID_FRAMEBUFFER_PITCH = -5,
+  NIGHTERM_INVALID_FRAMEBUFFER_BPP = -6,
+
+  NIGHTERM_NO_MORE_MEMORY = -7,
 
   NIGHTERM_SUCCESS = 0
 };
@@ -85,18 +105,15 @@ struct nighterm_config
   uint64_t fb_pitch;
   uint16_t fb_bpp;
 
-  uint32_t terminal_rows;
-  uint32_t terminal_cols;
-
   /* we have only one terminal for now... */
-  struct nighterm_terminal terminal[1];
+  struct nighterm_terminal terminals[NIGHTERM_MAX_TERMINALS];
+  uint8_t terminal_count;
   uint8_t current_terminal;
-};
 
-/**
- * @brief Custom malloc function pointer
- */
-typedef void* (*nighterm_malloc)(size_t);
+  /* malloc/free */
+  nighterm_malloc malloc;
+  nighterm_free free;
+};
 
 int
 nighterm_initialize(void* font,
@@ -105,7 +122,15 @@ nighterm_initialize(void* font,
                     uint64_t framebuffer_height,
                     uint64_t framebuffer_pitch,
                     uint16_t framebuffer_bpp,
-                    void* (*custom_malloc)());
+                    nighterm_malloc custom_malloc,
+                    nighterm_free custom_free);
+void
+nighterm_shutdown(void);
+
+int
+nighterm_create_terminal(char* name, char* font, uint8_t should_switch);
+void
+nighterm_switch_terminal(int id);
 
 void
 nighterm_write(char c);

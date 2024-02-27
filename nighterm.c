@@ -4,6 +4,9 @@
 
 #include "nighterm.h"
 
+/**
+ * @brief Nighterm configuration
+ */
 static struct nighterm_config config = { 0 };
 
 /**
@@ -377,33 +380,117 @@ static unsigned char nighterm_default_font[] = {
   0xff, 0xc3, 0xbd, 0xff, 0xc3, 0xbe, 0xff, 0xff
 };
 
+static void
+nighterm_priv__memcpy(void* dest, void* src, int size)
+{
+  char* a = (char*)dest;
+  char* b = (char*)src;
+
+  for (int i = 0; i < size; i++) {
+    a[i] = b[i];
+  }
+}
+
+/**
+ * @brief Draws a pixel to backbuffer of the current terminal.
+ *
+ * @param          x
+ *                 X position
+ *
+ * @param          y
+ *                 Y position
+ *
+ * @param          r
+ *                 Red color value (0-255)
+ *
+ * @param          g
+ *                 Green color value (0-255)
+ *
+ * @param          b
+ *                 Blue color value (0-255)
+ */
+static void
+nighterm_priv___putpixel(uint64_t x,
+                         uint64_t y,
+                         uint8_t r,
+                         uint8_t g,
+                         uint8_t b)
+{
+  // config.terminals[config.current_terminal].backbuffer[x * (config.fb_bpp >>
+  // 3) + y * config.fb_pitch] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+  *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) +
+               y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
+}
+
+/**
+ * @brief Parses a PSF2 font.
+ *
+ * @param          font
+ *                 PSF2 font buffer
+ *
+ * @param ptr      header
+ *                 Pointer to a PSF2 header structure which will be written to.
+ *
+ * @param ptr      data
+ *                 Pointer to a a memory where font data will be written to.
+ */
+static int
+nighterm_priv___parse_psf2_font(char* font, psf2Hdr* header, void** data)
+{
+  char* psf2buf = font;
+  *header = *(psf2Hdr*)font;
+  psf2buf += header->headerSize;
+  *data = psf2buf;
+
+  if (PSF_MODE == 2 || PSF_MODE == 1
+        ? (header->magic[0] != PSF_MAGIC0 || header->magic[1] != PSF_MAGIC1 ||
+           header->magic[2] != PSF_MAGIC2 || header->magic[3] != PSF_MAGIC3)
+        : 0) {
+    return NIGHTERM_FONT_INVALID;
+  }
+
+  return NIGHTERM_SUCCESS;
+}
+
+/**
+ * @brief Switches a backbuffer with the framebuffer
+ */
+static void
+nighterm_priv___switch_buffer(void)
+{
+  // nighterm_priv__memcpy(config.fb_addr,
+  // config.terminals[config.current_terminal].backbuffer, config.fb_height *
+  // (config.fb_pitch));
+}
+
 /**
  * @brief Initializes Nighterm terminals and configuration.
  *
- * @param       font
- *              Pointer to a PSF2 font buffer
+ * @param optional font
+ *                 Pointer to a PSF2 font buffer. If NULL, default font is used.
  *
- * @param       framebuffer_addr
- *              Framebuffer address
+ * @param          framebuffer_addr
+ *                 Framebuffer address
  *
- * @param       framebuffer_width
- *              Framebuffer width in pixels
+ * @param          framebuffer_width
+ *                 Framebuffer width in pixels
  *
- * @param       framebuffer_height
- *              Framebuffer height in pixelss
+ * @param          framebuffer_height
+ *                 Framebuffer height in pixelss
  *
- * @param       framebuffer_pitch
- *              Framebuffer Pitch
+ * @param          framebuffer_pitch
+ *                 Framebuffer Pitch
  *
- * @param       framebuffer_bpp
- *              Framebuffer's Bits per Pixel
+ * @param          framebuffer_bpp
+ *                 Framebuffer's Bits per Pixel
  *
- * @param [out] custom_malloc
- *              Pointer to a malloc() function
- *              provided by the host OS
+ * @param optional custom_malloc
+ *                 Pointer to a malloc() function
+ *                 provided by the host OS
  *
- * @return      NIGHTERM_SUCCESS if the initialization was successful;
- *              error code otherwise. All error codes are defined in nighterm.h.
+ * @return         NIGHTERM_SUCCESS if the initialization was successful;
+ *                 error code otherwise. All error codes are defined in
+ * nighterm.h.
  */
 int
 nighterm_initialize(void* font,
@@ -412,7 +499,8 @@ nighterm_initialize(void* font,
                     uint64_t framebuffer_height,
                     uint64_t framebuffer_pitch,
                     uint16_t framebuffer_bpp,
-                    void* (*custom_malloc)(size_t))
+                    nighterm_malloc custom_malloc,
+                    nighterm_free custom_free)
 {
   if (font == NULL) {
     /* No font supplied. */
@@ -439,17 +527,6 @@ nighterm_initialize(void* font,
     return NIGHTERM_INVALID_FRAMEBUFFER_BPP;
   }
 
-  char* psf2buf = font;
-  psf2Hdr hdr = *(psf2Hdr*)font;
-  psf2buf += hdr.headerSize;
-
-  if (PSF_MODE == 2 || PSF_MODE == 1
-        ? (hdr.magic[0] != PSF_MAGIC0 || hdr.magic[1] != PSF_MAGIC1 ||
-           hdr.magic[2] != PSF_MAGIC2 || hdr.magic[3] != PSF_MAGIC3)
-        : 0) {
-    return NIGHTERM_FONT_INVALID;
-  }
-
   config.fb_addr = framebuffer_addr;
   config.fb_width = framebuffer_width;
   config.fb_height = framebuffer_height;
@@ -457,160 +534,212 @@ nighterm_initialize(void* font,
   config.fb_bpp = framebuffer_bpp;
 
   config.current_terminal = 0;
-  config.terminal_rows = (config.fb_height / hdr.height);
-  config.terminal_cols = (config.fb_width / hdr.width);
-  config.terminal[config.current_terminal].font_header = hdr;
-  config.terminal[config.current_terminal].font_data = psf2buf;
-  config.terminal[config.current_terminal].cur_x = 0;
-  config.terminal[config.current_terminal].cur_y = 0;
-  config.terminal[config.current_terminal].title = "Nighterm Extended";
-  config.terminal[config.current_terminal].fg_color = 0xFFFFFFFF;
-  config.terminal[config.current_terminal].bg_color = 0xFF000000;
+  config.terminal_count = 0;
 
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
-  if (nighterm_malloc == NULL) {
-    return NIGHTERM_MALLOC_IS_NULL;
+  if (custom_malloc == NULL || custom_free == NULL) {
+    return NIGHTERM_INVALID_PARAMETERS;
   }
-  nighterm_malloc = custom_malloc;
-  config.terminal[config.current_terminal].buffer = nighterm_malloc(
-    framebuffer_height * framebuffer_width * (framebuffer_bpp >> 3));
+  config.malloc = custom_malloc;
+  config.free = custom_free;
 #else
   (void)custom_malloc;
+  (void)custom_free;
 #endif
+
+  nighterm_create_terminal("Nighterm Extended", font, 1);
 
   return NIGHTERM_SUCCESS;
 }
 
 /**
+ * @brief Frees all allocated memory and deinitializes Nighterm.
+ */
+void
+nighterm_shutdown(void)
+{
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+  for (int i = 0; i < config.terminal_count; i++) {
+    config.free(config.terminals[i].backbuffer);
+    config.free(config.terminals[i]);
+  }
+#endif
+}
+
+/**
+ * @brief Creates a new terminal object.
+ *
+ * @param optional name
+ *                 Name for the new terminal. If NULL, default name will be
+ * used.
+ *
+ * @param optional font
+ *                 Pointer to a PSF2 font buffer. If NULL, default font is used.
+ *
+ * @param          should_switch
+ *                 Defines whether Nighterm should switch to the new terminal
+ *                 after its creation. Any non-zero value will be treated as
+ * true.
+ *
+ * @return         Terminal ID if creation was successful;
+ *                 error code otherwise (see enum nighterm_status)
+ */
+int
+nighterm_create_terminal(char* name, char* font, uint8_t should_switch)
+{
+  int new_id = config.terminal_count;
+  int status = NIGHTERM_SUCCESS;
+
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+  config.terminals[new_id] = config.malloc(sizeof(struct nighterm_terminal));
+  config.terminals[new_id].backbuffer =
+    config.malloc(config.fb_width * config.fb_height * (config.fb_bpp >> 3) *
+                  sizeof(uint32_t*));
+#else
+  if ((config.terminal_count + 1) >= NIGHTERM_MAX_TERMINALS) {
+    return NIGHTERM_NO_MORE_MEMORY;
+  }
+#endif
+
+  config.terminals[new_id].name = name;
+  status =
+    nighterm_priv___parse_psf2_font(font,
+                                    &config.terminals[new_id].font_header,
+                                    &config.terminals[new_id].font_data);
+  if (status != NIGHTERM_SUCCESS) {
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+    config.free(config.terminals[new_id]);
+#endif
+    return status;
+  }
+
+  config.terminals[new_id].rows =
+    (config.fb_height / config.terminals[new_id].font_header.height);
+  config.terminals[new_id].cols =
+    (config.fb_width / config.terminals[new_id].font_header.width);
+  config.terminals[new_id].cur_x = 0;
+  config.terminals[new_id].cur_y = 0;
+  config.terminals[new_id].name = "Nighterm Extended";
+  config.terminals[new_id].fg_color = 0xFFFFFFFF;
+  config.terminals[new_id].bg_color = 0xFF000000;
+
+  config.terminal_count++;
+
+  if (should_switch) {
+    nighterm_switch_terminal(new_id);
+  }
+
+  return new_id;
+}
+
+void
+nighterm_switch_terminal(int id)
+{
+  config.current_terminal = id;
+  nighterm_priv___switch_buffer();
+}
+
+/**
  * @brief Sets foreground (text) color for the currently selected terminal.
  *
- * @param       r
- *              Red color value (0-255)
+ * @param          r
+ *                 Red color value (0-255)
  *
- * @param       g
- *              Green color value (0-255)
+ * @param          g
+ *                 Green color value (0-255)
  *
- * @param       b
- *              Blue color value (0-255)
+ * @param          b
+ *                 Blue color value (0-255)
  */
 void
 nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b)
 {
-  config.terminal[config.current_terminal].fg_color =
+  config.terminals[config.current_terminal].fg_color =
     (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
 /**
  * @brief Sets background color for the currently selected terminal.
  *
- * @param       r
- *              Red color value (0-255)
+ * @param          r
+ *                 Red color value (0-255)
  *
- * @param       g
- *              Green color value (0-255)
+ * @param          g
+ *                 Green color value (0-255)
  *
- * @param       b
- *              Blue color value (0-255)
+ * @param          b
+ *                 Blue color value (0-255)
  */
 void
 nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b)
 {
-  config.terminal[config.current_terminal].bg_color =
+  config.terminals[config.current_terminal].bg_color =
     (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
 /**
  * @brief Sets the cursor to an absolute position.
  *
- * @param       x
- *              Absolute x position
+ * @param          x
+ *                 Absolute x position
  *
- * @param       y
- *              Absolute y position
+ * @param          y
+ *                 Absolute y position
  *
  * @todo Check if the coordinates exceed the framebuffer's width/height
  */
 void
 nighterm_set_cursor_position(uint32_t x, uint32_t y)
 {
-  config.terminal[config.current_terminal].cur_x = x;
-  config.terminal[config.current_terminal].cur_y = y;
+  config.terminals[config.current_terminal].cur_x = x;
+  config.terminals[config.current_terminal].cur_y = y;
 }
 
 /**
  * @brief Sets the cursor to a relative position from its current position.
  *
- * @param       x
- *              Relative x position
+ * @param          x
+ *                 Relative x position
  *
- * @param       y
- *              Relative y position
+ * @param          y
+ *                 Relative y position
  *
  * @todo Check if the coordinates exceed the framebuffer's width/height
  */
 void
 nighterm_move_cursor(int32_t x, int32_t y)
 {
-  config.terminal[config.current_terminal].cur_x += x;
-  config.terminal[config.current_terminal].cur_y += y;
+  config.terminals[config.current_terminal].cur_x += x;
+  config.terminals[config.current_terminal].cur_y += y;
 }
 
 /**
  * @brief Gets the current cursor's coordinates
  *
- * @param ptr   x
- *              X position
+ * @param ptr      x
+ *                 X position
  *
- * @param ptr   y
- *              Y position
+ * @param ptr      y
+ *                 Y position
  */
 void
 nighterm_get_cursor_position(uint32_t* x, uint32_t* y)
 {
-  *x = config.terminal[config.current_terminal].cur_x;
-  *y = config.terminal[config.current_terminal].cur_y;
-}
-
-/**
- * @brief Draws a pixel to the framebuffer.
- *
- * @param       x
- *              X position
- *
- * @param       y
- *              Y position
- *
- * @param       r
- *              Red color value (0-255)
- *
- * @param       g
- *              Green color value (0-255)
- *
- * @param       b
- *              Blue color (0-255)
- */
-void
-nighterm_priv___putpixel(uint64_t x,
-                         uint64_t y,
-                         uint8_t r,
-                         uint8_t g,
-                         uint8_t b)
-{
-  *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) +
-               y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
+  *x = config.terminals[config.current_terminal].cur_x;
+  *y = config.terminals[config.current_terminal].cur_y;
 }
 
 /**
  * @brief Clears the screen with a single color
  *
- * @param       r
- *              Red color value (0-255)
+ * @param          r
+ *                 Red color value (0-255)
  *
- * @param       g
- *              Green color value (0-255)
+ * @param          g
+ *                 Green color value (0-255)
  *
- * @param       b
- *              Blue color value (0-255)
+ * @param          b
+ *                 Blue color value (0-255)
  */
 void
 nighterm_flush(uint8_t r, uint8_t g, uint8_t b)
@@ -625,32 +754,32 @@ nighterm_flush(uint8_t r, uint8_t g, uint8_t b)
 /**
  * @brief Draws a single character using the currently selected font.
  *
- * @param       row
- *              Character's row
+ * @param          row
+ *                 Character's row
  *
- * @param       col
- *              Character's column
+ * @param          col
+ *                 Character's column
  *
- * @param       c
- *              Character to be drawn
+ * @param          c
+ *                 Character to be drawn
  */
 void
 nighterm_render_char(int row, int col, char c)
 {
   int rounding =
-    ((config.terminal[config.current_terminal].font_header.width % 8) != 0) ^
-    (config.terminal[config.current_terminal].font_header.width == 9);
+    ((config.terminals[config.current_terminal].font_header.width % 8) != 0) ^
+    (config.terminals[config.current_terminal].font_header.width == 9);
   uint8_t* glyph =
-    config.terminal[config.current_terminal].font_data +
-    c * config.terminal[config.current_terminal].font_header.charSize;
+    config.terminals[config.current_terminal].font_data +
+    c * config.terminals[config.current_terminal].font_header.charSize;
 
   for (size_t y = 0;
-       y < config.terminal[config.current_terminal].font_header.height;
+       y < config.terminals[config.current_terminal].font_header.height;
        y++) {
     for (size_t x = 0;
-         x < config.terminal[config.current_terminal].font_header.width;
+         x < config.terminals[config.current_terminal].font_header.width;
          x++) {
-      if ((glyph[y * ((config.terminal[config.current_terminal]
+      if ((glyph[y * ((config.terminals[config.current_terminal]
                          .font_header.width /
                        8) +
                       rounding) +
@@ -658,29 +787,31 @@ nighterm_render_char(int row, int col, char c)
            (7 - x % 8)) &
           1) {
         uint8_t r =
-          (uint8_t)(config.terminal[config.current_terminal].fg_color >> 16) &
+          (uint8_t)(config.terminals[config.current_terminal].fg_color >> 16) &
           0xFF;
         uint8_t g =
-          (uint8_t)(config.terminal[config.current_terminal].fg_color >> 8) &
+          (uint8_t)(config.terminals[config.current_terminal].fg_color >> 8) &
           0xFF;
-        uint8_t b = (uint8_t)config.terminal[config.current_terminal].fg_color;
+        uint8_t b = (uint8_t)config.terminals[config.current_terminal].fg_color;
         nighterm_priv___putpixel(
-          col * config.terminal[config.current_terminal].font_header.width + x,
-          row * config.terminal[config.current_terminal].font_header.height + y,
+          col * config.terminals[config.current_terminal].font_header.width + x,
+          row * config.terminals[config.current_terminal].font_header.height +
+            y,
           r,
           g,
           b);
       } else {
         uint8_t r =
-          (uint8_t)(config.terminal[config.current_terminal].bg_color >> 16) &
+          (uint8_t)(config.terminals[config.current_terminal].bg_color >> 16) &
           0xFF;
         uint8_t g =
-          (uint8_t)(config.terminal[config.current_terminal].bg_color >> 8) &
+          (uint8_t)(config.terminals[config.current_terminal].bg_color >> 8) &
           0xFF;
-        uint8_t b = (uint8_t)config.terminal[config.current_terminal].bg_color;
+        uint8_t b = (uint8_t)config.terminals[config.current_terminal].bg_color;
         nighterm_priv___putpixel(
-          col * config.terminal[config.current_terminal].font_header.width + x,
-          row * config.terminal[config.current_terminal].font_header.height + y,
+          col * config.terminals[config.current_terminal].font_header.width + x,
+          row * config.terminals[config.current_terminal].font_header.height +
+            y,
           r,
           g,
           b);
@@ -692,42 +823,44 @@ nighterm_render_char(int row, int col, char c)
 /**
  * @brief Parses a single character for escape sequences and draws it
  *
- * @param       c
- *              Character to be drawn
+ * @param          c
+ *                 Character to be drawn
  */
 void
 nighterm_write(char c)
 {
   switch (c) {
     case '\n':
-      config.terminal[config.current_terminal].cur_x = 0;
-      config.terminal[config.current_terminal].cur_y++;
+      config.terminals[config.current_terminal].cur_x = 0;
+      config.terminals[config.current_terminal].cur_y++;
       break;
     case '\t':
-      config.terminal[config.current_terminal].cur_x += INDENT_AMOUNT;
+      config.terminals[config.current_terminal].cur_x += INDENT_AMOUNT;
       break;
     case '\b':
-      nighterm_render_char(config.terminal[config.current_terminal].cur_y,
-                           config.terminal[config.current_terminal].cur_x,
+      nighterm_render_char(config.terminals[config.current_terminal].cur_y,
+                           config.terminals[config.current_terminal].cur_x,
                            ' ');
 
       // this should be handled better
       // for now, try not to use \b.
-      config.terminal[config.current_terminal].cur_x -= 1;
+      config.terminals[config.current_terminal].cur_x -= 1;
       break;
     case 0:
       break; // ignore termination
     default:
       // Why does this not work???
-      if (config.terminal[config.current_terminal].cur_x >=
-          config.terminal_cols) {
-        config.terminal[config.current_terminal].cur_x = 0;
-        config.terminal[config.current_terminal].cur_y++;
+      if (config.terminals[config.current_terminal].cur_x >=
+          config.terminals[config.current_terminal].cols) {
+        config.terminals[config.current_terminal].cur_x = 0;
+        config.terminals[config.current_terminal].cur_y++;
       }
-      nighterm_render_char(config.terminal[config.current_terminal].cur_y,
-                           config.terminal[config.current_terminal].cur_x,
+      nighterm_render_char(config.terminals[config.current_terminal].cur_y,
+                           config.terminals[config.current_terminal].cur_x,
                            c);
-      config.terminal[config.current_terminal].cur_x++;
+      config.terminals[config.current_terminal].cur_x++;
       break;
   }
+
+  nighterm_priv___switch_buffer();
 }
