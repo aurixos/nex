@@ -3,7 +3,7 @@ name: Generate Doxygen Documentation
 on:
   push:
     branches:
-      - main
+      - path-2
 jobs:
   build:
     runs-on: ubuntu-latest
