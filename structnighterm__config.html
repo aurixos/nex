@@ -92,18 +92,21 @@ uint64_t&#160;</td><td class="memItemRight" valign="bottom"><b>fb_pitch</b></td>
 <tr class="memitem:afe29ab53d559c5f288ad7f5dc86be583"><td class="memItemLeft" align="right" valign="top"><a id="afe29ab53d559c5f288ad7f5dc86be583"></a>
 uint16_t&#160;</td><td class="memItemRight" valign="bottom"><b>fb_bpp</b></td></tr>
 <tr class="separator:afe29ab53d559c5f288ad7f5dc86be583"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9f133a99f773b4a48cd1d3d0d217d65b"><td class="memItemLeft" align="right" valign="top"><a id="a9f133a99f773b4a48cd1d3d0d217d65b"></a>
-uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>terminal_rows</b></td></tr>
-<tr class="separator:a9f133a99f773b4a48cd1d3d0d217d65b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a54945e73396e9b082aa75f6f8cc0e790"><td class="memItemLeft" align="right" valign="top"><a id="a54945e73396e9b082aa75f6f8cc0e790"></a>
-uint32_t&#160;</td><td class="memItemRight" valign="bottom"><b>terminal_cols</b></td></tr>
-<tr class="separator:a54945e73396e9b082aa75f6f8cc0e790"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ac63a405047d4c885c4337bfabbfc0903"><td class="memItemLeft" align="right" valign="top"><a id="ac63a405047d4c885c4337bfabbfc0903"></a>
-struct <a class="el" href="structnighterm__terminal.html">nighterm_terminal</a>&#160;</td><td class="memItemRight" valign="bottom"><b>terminal</b> [1]</td></tr>
-<tr class="separator:ac63a405047d4c885c4337bfabbfc0903"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7534f380344c123823af3633d7e461b9"><td class="memItemLeft" align="right" valign="top"><a id="a7534f380344c123823af3633d7e461b9"></a>
+struct <a class="el" href="structnighterm__terminal.html">nighterm_terminal</a>&#160;</td><td class="memItemRight" valign="bottom"><b>terminals</b> [NIGHTERM_MAX_TERMINALS]</td></tr>
+<tr class="separator:a7534f380344c123823af3633d7e461b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a963ad8e67ee8896ebf46133b1b110fa8"><td class="memItemLeft" align="right" valign="top"><a id="a963ad8e67ee8896ebf46133b1b110fa8"></a>
+uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>terminal_count</b></td></tr>
+<tr class="separator:a963ad8e67ee8896ebf46133b1b110fa8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adebee3e3419cb2b61eaebb3b198763bc"><td class="memItemLeft" align="right" valign="top"><a id="adebee3e3419cb2b61eaebb3b198763bc"></a>
 uint8_t&#160;</td><td class="memItemRight" valign="bottom"><b>current_terminal</b></td></tr>
 <tr class="separator:adebee3e3419cb2b61eaebb3b198763bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2813a71a977cce8f7d7167800e82f0d5"><td class="memItemLeft" align="right" valign="top"><a id="a2813a71a977cce8f7d7167800e82f0d5"></a>
+nighterm_malloc&#160;</td><td class="memItemRight" valign="bottom"><b>malloc</b></td></tr>
+<tr class="separator:a2813a71a977cce8f7d7167800e82f0d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41805a7dfe08fa8970fc41c687137496"><td class="memItemLeft" align="right" valign="top"><a id="a41805a7dfe08fa8970fc41c687137496"></a>
+nighterm_free&#160;</td><td class="memItemRight" valign="bottom"><b>free</b></td></tr>
+<tr class="separator:a41805a7dfe08fa8970fc41c687137496"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Nighterm configuration. </p>
