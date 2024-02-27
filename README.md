@@ -19,11 +19,11 @@ static struct limine_framebuffer framebuffer_response;
 framebuffer_response = framebuffer_request.response;
 
 nighterm_init(psf2_buffer,
-                framebuffer_request->address,
-                framebuffer_request->width,
-                framebuffer_request->height,
-                framebuffer_request->pitch,
-                framebuffer_request->bpp
+                framebuffer_response->address,
+                framebuffer_response->width,
+                framebuffer_response->height,
+                framebuffer_response->pitch,
+                framebuffer_response->bpp
                 NULL);
 ```
 
