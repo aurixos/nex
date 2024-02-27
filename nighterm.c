@@ -698,7 +698,7 @@ nighterm_render_char(int row, int col, char c)
 void
 nighterm_write(char c)
 {
-  switch (ch) {
+  switch (c) {
     case '\n':
       config.terminal[config.current_terminal].cur_x = 0;
       config.terminal[config.current_terminal].cur_y++;
@@ -726,7 +726,7 @@ nighterm_write(char c)
       }
       nighterm_render_char(config.terminal[config.current_terminal].cur_y,
                            config.terminal[config.current_terminal].cur_x,
-                           ch);
+                           c);
       config.terminal[config.current_terminal].cur_x++;
       break;
   }
