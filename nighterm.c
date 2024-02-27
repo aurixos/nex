@@ -1,7 +1,14 @@
+/**
+ * @brief This file implements public Nighterm API.
+ */
+
 #include "nighterm.h"
 
 static struct nighterm_config config = {0};
 
+/**
+ * @brief Default font if the one supplied is inavlid or NULL.
+ */
 static unsigned char nighterm_default_font[] = {
   0x72, 0xb5, 0x4a, 0x86, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
   0x01, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00,
@@ -401,7 +408,32 @@ static unsigned char nighterm_default_font[] = {
 };
 
 /**
- * Font points to a PSF2 file buffer
+ * @brief Initializes Nighterm terminals and configuration.
+ *
+ * @param       font
+ *              Pointer to a PSF2 font buffer
+ *
+ * @param       framebuffer_addr
+ *              Framebuffer address
+ *
+ * @param       framebuffer_width
+ *              Framebuffer width in pixels
+ *
+ * @param       framebuffer_height
+ *              Framebuffer height in pixelss
+ *
+ * @param       framebuffer_pitch
+ *              Framebuffer Pitch
+ *
+ * @param       framebuffer_bpp
+ *              Framebuffer's Bits per Pixel
+ *
+ * @param [out] custom_malloc
+ *              Pointer to a malloc() function
+ *              provided by the host OS
+ *
+ * @return      NIGHTERM_SUCCESS if the initialization was successful;
+ *              error code otherwise. All error codes are defined in nighterm.h.
  */
 int nighterm_initialize(void *font,
                 void *framebuffer_addr,
@@ -461,7 +493,7 @@ int nighterm_initialize(void *font,
     config.terminal[config.current_terminal].fg_color = 0xFFFFFFFF;
     config.terminal[config.current_terminal].bg_color = 0xFF000000;
 
-    #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
     if (nighterm_malloc == NULL) {
         return NIGHTERM_MALLOC_IS_NULL;
     }
@@ -474,52 +506,149 @@ int nighterm_initialize(void *font,
     return NIGHTERM_SUCCESS;
 }
 
+/**
+ * @brief Sets foreground (text) color for the currently selected terminal.
+ *
+ * @param       r
+ *              Red color value (0-255)
+ *
+ * @param       g
+ *              Green color value (0-255)
+ *
+ * @param       b
+ *              Blue color value (0-255)
+ */
 void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b)
 {
     config.terminal[config.current_terminal].fg_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
+/**
+ * @brief Sets background color for the currently selected terminal.
+ *
+ * @param       r
+ *              Red color value (0-255)
+ *
+ * @param       g
+ *              Green color value (0-255)
+ *
+ * @param       b
+ *              Blue color value (0-255)
+ */
 void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b)
 {
     config.terminal[config.current_terminal].bg_color = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
+/**
+ * @brief Sets the cursor to an absolute position.
+ *
+ * @param       x
+ *              Absolute x position
+ *
+ * @param       y
+ *              Absolute y position
+ *
+ * @todo Check if the coordinates exceed the framebuffer's width/height
+ */
 void nighterm_set_cursor_position(uint32_t x, uint32_t y)
 {
     config.terminal[config.current_terminal].cur_x = x;
     config.terminal[config.current_terminal].cur_y = y;
 }
 
+/**
+ * @brief Sets the cursor to a relative position from its current position.
+ *
+ * @param       x
+ *              Relative x position
+ *
+ * @param       y
+ *              Relative y position
+ *
+ * @todo Check if the coordinates exceed the framebuffer's width/height
+ */
 void nighterm_move_cursor(int32_t x, int32_t y)
 {
   config.terminal[config.current_terminal].cur_x += x;
   config.terminal[config.current_terminal].cur_y += y;
 }
 
+/**
+ * @brief Gets the current cursor's coordinates
+ *
+ * @param ptr   x
+ *              X position
+ *
+ * @param ptr   y
+ *              Y position
+ */
 void nighterm_get_cursor_position(uint32_t *x, uint32_t *y)
 {
   *x = config.terminal[config.current_terminal].cur_x;
   *y = config.terminal[config.current_terminal].cur_y;
 }
 
-void nighterm_putpixel(uint64_t x, uint64_t y, uint8_t r, uint8_t g, uint8_t b)
+/**
+ * @brief Draws a pixel to the framebuffer.
+ *
+ * @param       x
+ *              X position
+ *
+ * @param       y
+ *              Y position
+ *
+ * @param       r
+ *              Red color value (0-255)
+ *
+ * @param       g
+ *              Green color value (0-255)
+ *
+ * @param       b
+ *              Blue color (0-255)
+ */
+void nighterm_priv___putpixel(uint64_t x, uint64_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     *(uint32_t*)(config.fb_addr + x * (config.fb_bpp >> 3) + y * config.fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
+/**
+ * @brief Clears the screen with a single color
+ *
+ * @param       r
+ *              Red color value (0-255)
+ *
+ * @param       g
+ *              Green color value (0-255)
+ *
+ * @param       b
+ *              Blue color value (0-255)
+ */
 void nighterm_flush(uint8_t r, uint8_t g, uint8_t b)
 {
     for (uint64_t y = 0; y < config.fb_height; y++) {
         for (uint64_t x = 0; x < config.fb_width; x++) {
-            nighterm_putpixel(x,y, r, g, b);
+            nighterm_priv___putpixel(x,y, r, g, b);
         }
     }
 }
 
-void nighterm_render_char(int row, int col, char ch)
+/**
+ * @brief Draws a single character using the currently selected font.
+ *
+ * @param       row
+ *              Character's row
+ *
+ * @param       col
+ *              Character's column
+ *
+ * @param       c
+ *              Character to be drawn
+ */
+void nighterm_render_char(int row, int col, char c)
 {
     int rounding = ((config.terminal[config.current_terminal].font_header.width % 8) != 0) ^ (config.terminal[config.current_terminal].font_header.width == 9);
-    uint8_t *glyph = config.terminal[config.current_terminal].font_data + ch * config.terminal[config.current_terminal].font_header.charSize;
+    uint8_t *glyph = config.terminal[config.current_terminal].font_data + c * config.terminal[config.current_terminal].font_header.charSize;
 
     for (size_t y = 0; y < config.terminal[config.current_terminal].font_header.height; y++)
     {
@@ -530,20 +659,26 @@ void nighterm_render_char(int row, int col, char ch)
                 uint8_t r = (uint8_t)(config.terminal[config.current_terminal].fg_color >> 16) & 0xFF;
                 uint8_t g = (uint8_t)(config.terminal[config.current_terminal].fg_color >> 8) & 0xFF;
                 uint8_t b = (uint8_t)config.terminal[config.current_terminal].fg_color;
-                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
+                nighterm_priv___putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
             }
             else
             {
                 uint8_t r = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 16) & 0xFF;
                 uint8_t g = (uint8_t)(config.terminal[config.current_terminal].bg_color >> 8) & 0xFF;
                 uint8_t b = (uint8_t)config.terminal[config.current_terminal].bg_color;
-                nighterm_putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
+                nighterm_priv___putpixel(col * config.terminal[config.current_terminal].font_header.width + x, row * config.terminal[config.current_terminal].font_header.height + y, r, g, b);
             }
         }
     }
 }
 
-void nighterm_write(char ch)
+/**
+ * @brief Parses a single character for escape sequences and draws it
+ *
+ * @param       c
+ *              Character to be drawn
+ */
+void nighterm_write(char c)
 {
     switch (ch)
     {

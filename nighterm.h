@@ -1,9 +1,16 @@
+/**
+ * @brief This file exports public Nighterm API.
+ */
+
 #ifndef NIGHTERM_H_
 #define NIGHTERM_H_
 
 #include <stdint.h>
 #include <stddef.h>
 
+/**
+ * @brief Amount of spaces a tab (or \t) represents.
+ */
 #define INDENT_AMOUNT 4
 
 #define PSF_MODE 2
@@ -48,6 +55,9 @@ struct nighterm_terminal {
     uint32_t bg_color;
 };
 
+/**
+ * @brief Return codes
+ */
 enum nighterm_init_return_codes {
     NIGHTERM_FONT_INVALID = 2,
 
@@ -61,6 +71,9 @@ enum nighterm_init_return_codes {
     NIGHTERM_SUCCESS = 0
 };
 
+/**
+ * @brief Nighterm configuration
+ */
 struct nighterm_config {
     void *fb_addr;
     uint64_t fb_width;
@@ -76,6 +89,9 @@ struct nighterm_config {
     uint8_t current_terminal;
 };
 
+/**
+ * @brief Custom malloc function pointer
+ */
 typedef void *(*nighterm_malloc)(size_t);
 
 int nighterm_initialize(void *font, void *framebuffer_addr,
@@ -83,14 +99,14 @@ int nighterm_initialize(void *font, void *framebuffer_addr,
                         uint64_t framebuffer_pitch, uint16_t framebuffer_bpp,
                         void *(*custom_malloc)());
 
-void nighterm_write(char ch);
+void nighterm_write(char c);
 void nighterm_flush(uint8_t r, uint8_t g, uint8_t b);
 
 void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
 void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
 
-void nighterm_get_cursor_position(uint32_t *x, uint32_t *y);
-void nighterm_set_cursor_position(uint32_t x, uint32_t y);
 void nighterm_move_cursor(int32_t x, int32_t y);
+void nighterm_set_cursor_position(uint32_t x, uint32_t y);
+void nighterm_get_cursor_position(uint32_t *x, uint32_t *y);
 
 #endif // NIGHTERM_H_

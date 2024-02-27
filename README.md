@@ -23,15 +23,12 @@ nighterm_init(psf2_buffer,
                 framebuffer_request->width,
                 framebuffer_request->height,
                 framebuffer_request->pitch,
-                framebuffer_request->bpp);
+                framebuffer_request->bpp
+                NULL);
 ```
 
 It might be desirable to check for the return value of the initialization function to make sure Nighterm is ready to be used.
 You can find a list of possible return codes in [nighterm.h](nighterm.h).
-
-### TODO
-
-- If `NULL` is passed into the font parameter, use a builtin font instead.
 
 # Credits
 
