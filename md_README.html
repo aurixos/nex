@@ -82,11 +82,11 @@ Usage</h1>
 <div class="line">framebuffer_response = framebuffer_request.response;</div>
 <div class="line"> </div>
 <div class="line">nighterm_init(psf2_buffer,</div>
-<div class="line">                framebuffer_request-&gt;address,</div>
-<div class="line">                framebuffer_request-&gt;width,</div>
-<div class="line">                framebuffer_request-&gt;height,</div>
-<div class="line">                framebuffer_request-&gt;pitch,</div>
-<div class="line">                framebuffer_request-&gt;bpp</div>
+<div class="line">                framebuffer_response-&gt;address,</div>
+<div class="line">                framebuffer_response-&gt;width,</div>
+<div class="line">                framebuffer_response-&gt;height,</div>
+<div class="line">                framebuffer_response-&gt;pitch,</div>
+<div class="line">                framebuffer_response-&gt;bpp</div>
 <div class="line">                NULL);</div>
 </div><!-- fragment --><p>It might be desirable to check for the return value of the initialization function to make sure Nighterm is ready to be used. You can find a list of possible return codes in <a href="nighterm.h">nighterm.h</a>.</p>
 <h1><a class="anchor" id="autotoc_md2"></a>
