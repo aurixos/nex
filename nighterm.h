@@ -5,8 +5,8 @@
 #ifndef NIGHTERM_H_
 #define NIGHTERM_H_
 
-#include <stdint.h>
 #include <stddef.h>
+#include <stdint.h>
 
 /**
  * @brief Amount of spaces a tab (or \t) represents.
@@ -23,90 +23,105 @@
 /**
  * @brief PSF2 file header.
  */
-typedef struct {
-    uint8_t magic[4];
-    uint32_t version;
-    uint32_t headerSize;
-    uint32_t flags;
-    uint32_t length;
-    uint32_t charSize;
-    uint32_t height, width;
+typedef struct
+{
+  uint8_t magic[4];
+  uint32_t version;
+  uint32_t headerSize;
+  uint32_t flags;
+  uint32_t length;
+  uint32_t charSize;
+  uint32_t height, width;
 } __attribute__((packed)) psf2Hdr;
 
 /**
  * @brief Nighterm Terminal object.
  */
-struct nighterm_terminal {
-    psf2Hdr font_header;
-    void *font_data;
+struct nighterm_terminal
+{
+  psf2Hdr font_header;
+  void* font_data;
 
-    uint8_t cur_x;
-    uint8_t cur_y;
+  uint8_t cur_x;
+  uint8_t cur_y;
 
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
-    uint32_t *buffer;
+  uint32_t* buffer;
 #else
-    uint32_t buffer[4096*4];
+  uint32_t buffer[4096 * 4];
 #endif
 
-    char* title;
+  char* title;
 
-    uint32_t fg_color;
-    uint32_t bg_color;
+  uint32_t fg_color;
+  uint32_t bg_color;
 };
 
 /**
  * @brief Return codes
  */
-enum nighterm_init_return_codes {
-    NIGHTERM_FONT_INVALID = 2,
+enum nighterm_init_return_codes
+{
+  NIGHTERM_FONT_INVALID = 2,
 
-    NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = 3,
-    NIGHTERM_INVALID_FRAMEBUFFER_SIZE = 4,
-    NIGHTERM_INVALID_FRAMEBUFFER_PITCH = 5,
-    NIGHTERM_INVALID_FRAMEBUFFER_BPP = 6,
+  NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = 3,
+  NIGHTERM_INVALID_FRAMEBUFFER_SIZE = 4,
+  NIGHTERM_INVALID_FRAMEBUFFER_PITCH = 5,
+  NIGHTERM_INVALID_FRAMEBUFFER_BPP = 6,
 
-    NIGHTERM_MALLOC_IS_NULL = 7,
+  NIGHTERM_MALLOC_IS_NULL = 7,
 
-    NIGHTERM_SUCCESS = 0
+  NIGHTERM_SUCCESS = 0
 };
 
 /**
  * @brief Nighterm configuration
  */
-struct nighterm_config {
-    void *fb_addr;
-    uint64_t fb_width;
-    uint64_t fb_height;
-    uint64_t fb_pitch;
-    uint16_t fb_bpp;
+struct nighterm_config
+{
+  void* fb_addr;
+  uint64_t fb_width;
+  uint64_t fb_height;
+  uint64_t fb_pitch;
+  uint16_t fb_bpp;
 
-    uint32_t terminal_rows;
-    uint32_t terminal_cols;
+  uint32_t terminal_rows;
+  uint32_t terminal_cols;
 
-    /* we have only one terminal for now... */
-    struct nighterm_terminal terminal[1];
-    uint8_t current_terminal;
+  /* we have only one terminal for now... */
+  struct nighterm_terminal terminal[1];
+  uint8_t current_terminal;
 };
 
 /**
  * @brief Custom malloc function pointer
  */
-typedef void *(*nighterm_malloc)(size_t);
+typedef void* (*nighterm_malloc)(size_t);
 
-int nighterm_initialize(void *font, void *framebuffer_addr,
-                        uint64_t framebuffer_width, uint64_t framebuffer_height,
-                        uint64_t framebuffer_pitch, uint16_t framebuffer_bpp,
-                        void *(*custom_malloc)());
+int
+nighterm_initialize(void* font,
+                    void* framebuffer_addr,
+                    uint64_t framebuffer_width,
+                    uint64_t framebuffer_height,
+                    uint64_t framebuffer_pitch,
+                    uint16_t framebuffer_bpp,
+                    void* (*custom_malloc)());
 
-void nighterm_write(char c);
-void nighterm_flush(uint8_t r, uint8_t g, uint8_t b);
+void
+nighterm_write(char c);
+void
+nighterm_flush(uint8_t r, uint8_t g, uint8_t b);
 
-void nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
-void nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
+void
+nighterm_set_fg_color(uint8_t r, uint8_t g, uint8_t b);
+void
+nighterm_set_bg_color(uint8_t r, uint8_t g, uint8_t b);
 
-void nighterm_move_cursor(int32_t x, int32_t y);
-void nighterm_set_cursor_position(uint32_t x, uint32_t y);
-void nighterm_get_cursor_position(uint32_t *x, uint32_t *y);
+void
+nighterm_move_cursor(int32_t x, int32_t y);
+void
+nighterm_set_cursor_position(uint32_t x, uint32_t y);
+void
+nighterm_get_cursor_position(uint32_t* x, uint32_t* y);
 
 #endif // NIGHTERM_H_
