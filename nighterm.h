@@ -68,7 +68,8 @@ struct nighterm_terminal
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
   uint32_t* backbuffer;
 #else
-  uint32_t backbuffer[1920 * (4 * 1080)];
+  //uint32_t backbuffer[1920 * (4 * 1080)];
+  uint32_t backbuffer; // placeholder
 #endif
 
   uint32_t fg_color;
