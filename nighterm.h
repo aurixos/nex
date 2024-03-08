@@ -150,4 +150,7 @@ nighterm_set_cursor_position(uint32_t x, uint32_t y);
 void
 nighterm_get_cursor_position(uint32_t* x, uint32_t* y);
 
+int
+nighterm_get_current_terminal_id();
+
 #endif // NIGHTERM_H_
