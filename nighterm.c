@@ -864,3 +864,12 @@ nighterm_write(char c)
 
   nighterm_priv___switch_buffer();
 }
+
+/**
+ * @brief Simple function to return the current terminal's ID
+ */
+
+int
+nighterm_get_current_terminal_id() {
+  return config.current_terminal;
+}
