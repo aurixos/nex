@@ -380,7 +380,7 @@ static unsigned char nighterm_default_font[] = {
   0xff, 0xc3, 0xbd, 0xff, 0xc3, 0xbe, 0xff, 0xff
 };
 
-static void
+UNUSED static void
 nighterm_priv__memcpy(void* dest, void* src, int size)
 {
   char* a = (char*)dest;
