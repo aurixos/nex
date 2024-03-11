@@ -380,8 +380,8 @@ static unsigned char nighterm_default_font[] = {
   0xff, 0xc3, 0xbd, 0xff, 0xc3, 0xbe, 0xff, 0xff
 };
 
-UNUSED static void
-nighterm_priv__memcpy(void* dest, void* src, int size)
+#if 0
+static void nighterm_priv__memcpy(void* dest, void* src, int size)
 {
   char* a = (char*)dest;
   char* b = (char*)src;
@@ -390,6 +390,7 @@ nighterm_priv__memcpy(void* dest, void* src, int size)
     a[i] = b[i];
   }
 }
+#endif
 
 /**
  * @brief Draws a pixel to backbuffer of the current terminal.
