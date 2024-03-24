@@ -12,7 +12,7 @@ static struct nighterm_config config = { 0 };
 /**
  * @brief Default font if the one supplied is inavlid or NULL.
  */
-static unsigned char nighterm_default_font[] = {
+unsigned char nighterm_default_font[] = {
   0x72, 0xb5, 0x4a, 0x86, 0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00, 0x01,
   0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00,
   0x00, 0x00, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x66, 0x42, 0x00, 0x42, 0x42,
@@ -602,10 +602,10 @@ nighterm_create_terminal(char* name, char* font, uint8_t should_switch)
 #endif
 
   config.terminals[new_id].name = name;
-  status =
-    nighterm_priv___parse_psf2_font(font,
-                                    &config.terminals[new_id].font_header,
-                                    &config.terminals[new_id].font_data);
+  //status =
+  //  nighterm_priv___parse_psf2_font(font,
+  //                                  &config.terminals[new_id].font_header,
+  //                                  &config.terminals[new_id].font_data);
   if (status != NIGHTERM_SUCCESS) {
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
     config.free(config.terminals[new_id]);
@@ -630,6 +630,25 @@ nighterm_create_terminal(char* name, char* font, uint8_t should_switch)
   }
 
   return new_id;
+}
+
+/**
+ * @brief Changes the font.
+ *
+ * @param font
+ *        Pointer to a buffer containing a new PSF2 font.
+ *
+ * @return NIGHTERM_SUCCESS if the font has been changed sucessfully;
+ *         NIGHTERM_INVALID_FONT otherwise.
+ */
+int
+nighterm_set_font(void *font)
+{
+  if (font == NULL) {
+    return -1;
+  }
+
+  return nighterm_priv___parse_psf2_font(font, &config.terminals[0].font_header, &config.terminals[0].font_data);
 }
 
 void

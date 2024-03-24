@@ -132,6 +132,9 @@ nighterm_create_terminal(char* name, char* font, uint8_t should_switch);
 void
 nighterm_switch_terminal(int id);
 
+int
+nighterm_set_font(void *font);
+
 void
 nighterm_write(char c);
 void
