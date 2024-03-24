@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=9"/>
 <meta name="generator" content="Doxygen 1.9.1"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Nighterm Extended: Nighterm</title>
+<title>Nighterm Extended: Nighterm Extended</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -63,12 +63,16 @@ $(function() {
 </div><!-- top -->
 <div class="PageDoc"><div class="header">
   <div class="headertitle">
-<div class="title">Nighterm </div>  </div>
+<div class="title">Nighterm Extended </div>  </div>
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p>An awesome terminal emulator</p>
 <h1><a class="anchor" id="autotoc_md1"></a>
 Usage</h1>
+<blockquote class="doxtable">
+<p>[!NOTE] <br  />
+ For an always up-to-date example of NEx, you can visit the <a href="https://github.com/schkwve/nighterm-extended-example">NEx template</a> repository. </p>
+</blockquote>
 <p>Initializing Nighterm is as simple as calling <code>init_nighterm()</code>!</p>
 <p>Limine example: </p><div class="fragment"><div class="line"><span class="keyword">static</span> <span class="keyword">volatile</span> <span class="keyword">struct </span>limine_framebuffer_request framebuffer_request = {</div>
 <div class="line">    .id = LIMINE_FRAMEBUFFER_REQUEST,</div>
@@ -81,17 +85,24 @@ Usage</h1>
 <div class="line"> </div>
 <div class="line">framebuffer_response = framebuffer_request.response;</div>
 <div class="line"> </div>
-<div class="line">nighterm_init(psf2_buffer,</div>
+<div class="line"><span class="keyword">struct </span><a class="code" href="structnighterm__ctx.html">nighterm_ctx</a> context;</div>
+<div class="line"> </div>
+<div class="line">nighterm_init(context,</div>
+<div class="line">                psf2_buffer,</div>
 <div class="line">                framebuffer_response-&gt;address,</div>
 <div class="line">                framebuffer_response-&gt;width,</div>
 <div class="line">                framebuffer_response-&gt;height,</div>
 <div class="line">                framebuffer_response-&gt;pitch,</div>
 <div class="line">                framebuffer_response-&gt;bpp</div>
-<div class="line">                NULL);</div>
-</div><!-- fragment --><p>It might be desirable to check for the return value of the initialization function to make sure Nighterm is ready to be used. You can find a list of possible return codes in <a href="nighterm.h">nighterm.h</a>.</p>
+<div class="line">                kmalloc,</div>
+<div class="line">                kfree);</div>
+<div class="ttc" id="astructnighterm__ctx_html"><div class="ttname"><a href="structnighterm__ctx.html">nighterm_ctx</a></div><div class="ttdoc">Nighterm Terminal object.</div><div class="ttdef"><b>Definition:</b> nighterm.h:53</div></div>
+</div><!-- fragment --><p><code>font</code>, <code>malloc</code> and <code>free</code> parameters are optional and can be NULL. All other parameters (context and framebuffer information) are required.</p>
+<p>You should check for the return value of the initialization function to make sure Nighterm is ready to be used. You can find a list of possible return codes in <a href="nighterm.h">nighterm.h</a>.</p>
+<p>If you wish to supply <code>kmalloc()</code> and <code>kfree()</code> to NEx, make sure to define <code>NIGHTERM_MALLOC_IS_AVAILABLE</code> macro before including <code><a class="el" href="nighterm_8h_source.html">nighterm.h</a></code>. If you supply NULL to the <code>font</code> parameter, a default built-in font will be used. The font can then be changed later.</p>
 <h1><a class="anchor" id="autotoc_md2"></a>
 Credits</h1>
-<p>Nighterm Extended is a fork of <a href="https://github.com/KevinAlavik/Nighterm">Nighterm</a> written (and maintained) by <a href="https://github.com/KevinAlavik">puffer</a>.</p>
+<p>Nighterm Extended is a fork of <a href="https://github.com/KevinAlavik/Nighterm">Nighterm</a> written by <a href="https://github.com/KevinAlavik">puffer</a>.</p>
 <p>This software is released under the GPLv3 license. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->

@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['nighterm_5',['Nighterm',['../md_README.html',1,'']]]
+  ['nighterm_20extended_5',['Nighterm Extended',['../md_README.html',1,'']]]
 ];
