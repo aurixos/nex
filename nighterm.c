@@ -131,8 +131,8 @@ nighterm_initialize(struct nighterm_ctx *config,
     return NIGHTERM_INVALID_FRAMEBUFFER_PITCH;
   }
 
-  if (framebuffer_bpp != 32) {
-    /* Invalid framebuffer BPP. */
+  if (framebuffer_bpp < 1) {
+    /* Invalid framebuffer bpp. */
     return NIGHTERM_INVALID_FRAMEBUFFER_BPP;
   }
 
