@@ -34,8 +34,9 @@ nighterm_priv___putpixel(struct nighterm_ctx *context,
                          uint8_t g,
                          uint8_t b)
 {
-  *(uint32_t*)(context->fb_addr + x * (context->fb_bpp >> 3) +
-               y * context->fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
+  context->backbuffer[x * (context->fb_bpp >> 3) + y * context->fb_pitch] = (0xFF << 24) | (r << 16) | (g << 8) | b;
+  // *(uint32_t *)(context->fb_addr + x * (context->fb_bpp >> 3) +
+  //              y * context->fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
 /**
@@ -437,6 +438,17 @@ nighterm_render_char(struct nighterm_ctx *context, int row, int col, char c)
 }
 
 /**
+ * @brief Writes the backbuffer's contents to the framebuffer
+ *
+ * @param          context
+ *                 Nighterm context
+ */
+void nighterm_swap_buffers(struct nighterm_ctx *context)
+{
+  memcpy(context->fb_addr, context->backbuffer, context->fb_height * context->fb_pitch);
+}
+
+/**
  * @brief Parses a single character for escape sequences and draws it
  *
  * @param          context
@@ -480,4 +492,6 @@ nighterm_write(struct nighterm_ctx *context, char c)
       context->cur_x++;
       break;
   }
+
+  nighterm_swap_buffers(context);
 }

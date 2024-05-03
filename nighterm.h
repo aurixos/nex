@@ -69,6 +69,9 @@ struct nighterm_ctx
   uint32_t fg_color;
   uint32_t bg_color;
 
+  // define a 1920x1080 32bpp screen
+  uint32_t backbuffer[1920*1080*4];
+
   nighterm_malloc malloc;
   nighterm_free free;
 };
