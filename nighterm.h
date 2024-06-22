@@ -15,13 +15,6 @@
 #define NIGHTERM_INDENT_WIDTH 4
 #endif
 
-#define PSF_MODE 2
-
-#define PSF_MAGIC0 0x72
-#define PSF_MAGIC1 0xb5
-#define PSF_MAGIC2 0x4a
-#define PSF_MAGIC3 0x86
-
 /**
  * @brief Memory allocator function pointer.
  */
@@ -31,20 +24,6 @@ typedef void* (*nighterm_malloc)(size_t);
  * @brief Memory allocator function pointer.
  */
 typedef void (*nighterm_free)(void*);
-
-/**
- * @brief PSF2 file header.
- */
-typedef struct
-{
-  uint8_t magic[4];
-  uint32_t version;
-  uint32_t headerSize;
-  uint32_t flags;
-  uint32_t length;
-  uint32_t charSize;
-  uint32_t height, width;
-} __attribute__((packed)) psf2_header;
 
 /**
  * @brief Nighterm Terminal object.
@@ -57,7 +36,12 @@ struct nighterm_ctx
   uint64_t fb_bpp;
   uint64_t fb_pitch;
 
-  psf2_header font_header;
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+  uint8_t *backbuffer;
+#else
+  uint8_t backbuffer[1920*1080*4];
+#endif
+
   void* font_data;
 
   uint8_t cur_x;
@@ -78,17 +62,12 @@ struct nighterm_ctx
  */
 enum nighterm_status
 {
-  NIGHTERM_MALLOC_IS_NULL = 1,
+  NIGHTERM_NO_MORE_MEMORY = -1,
 
   NIGHTERM_FONT_INVALID = -2,
+  NIGHTERM_INVALID_PARAMETER = -3,
 
-  NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS = -3,
-  NIGHTERM_INVALID_FRAMEBUFFER_SIZE = -4,
-  NIGHTERM_INVALID_FRAMEBUFFER_PITCH = -5,
-  NIGHTERM_INVALID_FRAMEBUFFER_BPP = -6,
-
-  NIGHTERM_NO_MORE_MEMORY = -7,
-
+  NIGHTERM_ERROR = -128,
   NIGHTERM_SUCCESS = 0
 };
 
@@ -98,11 +77,10 @@ nighterm_initialize(struct nighterm_ctx *new,
                     void* framebuffer_addr,
                     uint64_t framebuffer_width,
                     uint64_t framebuffer_height,
-                    uint64_t framebuffer_pitch,
                     uint16_t framebuffer_bpp,
                     nighterm_malloc custom_malloc,
                     nighterm_free custom_free);
-void
+int
 nighterm_shutdown(struct nighterm_ctx *context);
 
 int

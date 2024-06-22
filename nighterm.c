@@ -6,6 +6,31 @@
 #include "nighterm_font.h"
 
 /**
+ * @private
+ * @brief Copies n chunks of memory to destination.
+ * 
+ * @param          dest
+ *                 Pointer to destination memory
+ * 
+ * @param          src
+ *                 Pointer to source memory
+ * 
+ * @param          n
+ *                 Amount of bytes to copy
+ */
+void
+nighterm_memcpy(void *dest, void *src, size_t n)
+{
+  char *psrc = (char *)src;
+  char *pdest = (char *)dest;
+
+  for (size_t i = 0; i < n; i++) {
+    pdest[i] = psrc[i];
+  }
+}
+
+/**
+ * @private
  * @brief Draws a pixel to backbuffer of the current terminal.
  *
  * @param          context
@@ -26,46 +51,28 @@
  * @param          b
  *                 Blue color value (0-255)
  */
-static void
-nighterm_priv___putpixel(struct nighterm_ctx *context,
+void
+nighterm_putpixel(struct nighterm_ctx *context,
                          uint64_t x,
                          uint64_t y,
                          uint8_t r,
                          uint8_t g,
                          uint8_t b)
 {
-  *(uint32_t*)(context->fb_addr + x * (context->fb_bpp >> 3) +
-               y * context->fb_pitch) = (0xFF << 24) | (r << 16) | (g << 8) | b;
+  context->backbuffer[x * (context->fb_bpp >> 3) + y * context->fb_pitch] = (0xFF << 24) | (r << 16) | (g << 8) | b;
 }
 
 /**
- * @brief Parses a PSF2 font.
- *
- * @param          font
- *                 PSF2 font buffer
- *
- * @param ptr      header
- *                 Pointer to a PSF2 header structure which will be written to.
- *
- * @param ptr      data
- *                 Pointer to a a memory where font data will be written to.
+ * @private
+ * @brief Copies backbuffer to the framebuffer
+ * 
+ * @param          context
+ *                 Nighterm context
  */
-static int
-nighterm_priv___parse_psf2_font(char* font, psf2_header* header, void** data)
+void
+nighterm_flush_backbuffer(struct nighterm_ctx *context)
 {
-  char* psf2buf = font;
-  *header = *(psf2_header *)font;
-  psf2buf += header->headerSize;
-  *data = psf2buf;
-
-  if (PSF_MODE == 2 || PSF_MODE == 1
-        ? (header->magic[0] != PSF_MAGIC0 || header->magic[1] != PSF_MAGIC1 ||
-           header->magic[2] != PSF_MAGIC2 || header->magic[3] != PSF_MAGIC3)
-        : 0) {
-    return NIGHTERM_FONT_INVALID;
-  }
-
-  return NIGHTERM_SUCCESS;
+  nighterm_memcpy(context->fb_addr, context->backbuffer, context->fb_height * context->fb_pitch);
 }
 
 /**
@@ -75,7 +82,7 @@ nighterm_priv___parse_psf2_font(char* font, psf2_header* header, void** data)
  *                 Pointer to a new context structure.
  *
  * @param optional font
- *                 Pointer to a PSF2 font buffer. If NULL, default font is used.
+ *                 Pointer to a font buffer. If NULL, default font is used.
  *
  * @param          framebuffer_addr
  *                 Framebuffer address
@@ -86,9 +93,6 @@ nighterm_priv___parse_psf2_font(char* font, psf2_header* header, void** data)
  * @param          framebuffer_height
  *                 Framebuffer height in pixelss
  *
- * @param          framebuffer_pitch
- *                 Framebuffer Pitch
- *
  * @param          framebuffer_bpp
  *                 Framebuffer's Bits per Pixel
  *
@@ -98,7 +102,7 @@ nighterm_priv___parse_psf2_font(char* font, psf2_header* header, void** data)
  *
  * @return         NIGHTERM_SUCCESS if the initialization was successful;
  *                 error code otherwise. All error codes are defined in
- * nighterm.h.
+ *                 nighterm.h.
  */
 int
 nighterm_initialize(struct nighterm_ctx *config,
@@ -106,7 +110,6 @@ nighterm_initialize(struct nighterm_ctx *config,
                     void *framebuffer_addr,
                     uint64_t framebuffer_width,
                     uint64_t framebuffer_height,
-                    uint64_t framebuffer_pitch,
                     uint16_t framebuffer_bpp,
                     nighterm_malloc custom_malloc,
                     nighterm_free custom_free)
@@ -118,28 +121,23 @@ nighterm_initialize(struct nighterm_ctx *config,
 
   if (framebuffer_addr == NULL) {
     /* No framebuffer specified, or invalid address. */
-    return NIGHTERM_INVALID_FRAMEBUFFER_ADDRESS;
+    return NIGHTERM_INVALID_PARAMETER;
   }
 
   if (framebuffer_width < 1 || framebuffer_height < 1) {
     /* Invalid framebuffer dimensions. */
-    return NIGHTERM_INVALID_FRAMEBUFFER_SIZE;
-  }
-
-  if (framebuffer_pitch < 1) {
-    /* Invalid framebuffer pitch. */
-    return NIGHTERM_INVALID_FRAMEBUFFER_PITCH;
+    return NIGHTERM_INVALID_PARAMETER;
   }
 
   if (framebuffer_bpp < 1) {
     /* Invalid framebuffer bpp. */
-    return NIGHTERM_INVALID_FRAMEBUFFER_BPP;
+    return NIGHTERM_INVALID_PARAMETER;
   }
 
   config->fb_addr = framebuffer_addr;
   config->fb_width = framebuffer_width;
   config->fb_height = framebuffer_height;
-  config->fb_pitch = framebuffer_pitch;
+  config->fb_pitch = framebuffer_width * ((framebuffer_bpp | 7) >> 3);
   config->fb_bpp = framebuffer_bpp;
 
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
@@ -155,24 +153,22 @@ nighterm_initialize(struct nighterm_ctx *config,
   config->free = NULL;
 #endif
 
-
-#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
-  // TODO: Allocate memory for backbuffer
-#endif
-
-  int status =
-    nighterm_priv___parse_psf2_font(font,
+  int status = NIGHTERM_SUCCESS;
+    /*nighterm_parse_font(font,
                                     &config->font_header,
-                                    &config->font_data);
+                                    &config->font_data); */
   if (status != NIGHTERM_SUCCESS) {
-#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
-    // TODO: Free memory for backbuffer
-#endif
     return status;
   }
 
-  config->rows = (config->fb_height / config->font_header.height);
-  config->cols = (config->fb_width / config->font_header.width);
+#ifdef NIGHTERM_MALLOC_IS_AVAILABLE
+  config->backbuffer = (uint8_t *)malloc((config->fb_height * config->fb_width) * sizeof(uint32_t));
+#endif
+
+  // config->rows = (config->fb_height / config->font_header.height);
+  // config->cols = (config->fb_width / config->font_header.width);
+  config->rows = (config->fb_height / 16);
+  config->cols = (config->fb_width / 8);
   config->cur_x = 0;
   config->cur_y = 0;
   config->fg_color = 0xFFFFFFFF;
@@ -188,9 +184,13 @@ nighterm_initialize(struct nighterm_ctx *config,
  * @param          context
  *                 Nighterm context
  */
-void
+int
 nighterm_shutdown(struct nighterm_ctx *context)
 {
+  if (context == NULL) {
+    return NIGHTERM_INVALID_PARAMETER;
+  }
+
   context->fb_addr = 0;
   context->fb_width = 0;
   context->fb_height = 0;
@@ -202,7 +202,6 @@ nighterm_shutdown(struct nighterm_ctx *context)
   context->cur_y = 0;
   context->fg_color = 0;
   context->bg_color = 0;
-  context->font_header = (psf2_header){0};
   context->font_data = NULL;
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
   context->free(context->backbuffer);
@@ -211,6 +210,8 @@ nighterm_shutdown(struct nighterm_ctx *context)
 #endif
   context->malloc = NULL;
   context->free = NULL;
+
+  return NIGHTERM_SUCCESS;
 }
 
 /**
@@ -220,7 +221,7 @@ nighterm_shutdown(struct nighterm_ctx *context)
  *        Pointer to Nighterm context
  *
  * @param font
- *        Pointer to a buffer containing a new PSF2 font
+ *        Pointer to a buffer containing a new font
  *
  * @return NIGHTERM_SUCCESS if the font has been changed sucessfully;
  *         NIGHTERM_INVALID_FONT otherwise.
@@ -228,11 +229,13 @@ nighterm_shutdown(struct nighterm_ctx *context)
 int
 nighterm_set_font(struct nighterm_ctx *context, void *font)
 {
+  (void)context;
   if (font == NULL) {
     return -1;
   }
 
-  return nighterm_priv___parse_psf2_font(font, &context->font_header, &context->font_data);
+  // return nighterm_parse_font(font, &context->font_header, &context->font_data);
+  return NIGHTERM_ERROR;
 }
 
 /**
@@ -360,80 +363,11 @@ nighterm_flush(struct nighterm_ctx *context, uint8_t r, uint8_t g, uint8_t b)
 {
   for (uint64_t y = 0; y < context->fb_height; y++) {
     for (uint64_t x = 0; x < context->fb_width; x++) {
-      nighterm_priv___putpixel(context, x, y, r, g, b);
+      nighterm_putpixel(context, x, y, r, g, b);
     }
   }
-}
 
-/**
- * @brief Draws a single character using the currently selected font.
- *
- * @param          context
- *                 Nighterm context
- *
- * @param          row
- *                 Character's row
- *
- * @param          col
- *                 Character's column
- *
- * @param          c
- *                 Character to be drawn
- */
-void
-nighterm_render_char(struct nighterm_ctx *context, int row, int col, char c)
-{
-  int rounding =
-    ((context->font_header.width % 8) != 0) ^
-    (context->font_header.width == 9);
-  uint8_t* glyph =
-    context->font_data +
-    c * context->font_header.charSize;
-
-  for (size_t y = 0;
-       y < context->font_header.height;
-       y++) {
-    for (size_t x = 0;
-         x < context->font_header.width;
-         x++) {
-      if ((glyph[y * ((context->font_header.width /
-                       8) +
-                      rounding) +
-                 x / 8] >>
-           (7 - x % 8)) &
-          1) {
-        uint8_t r =
-          (uint8_t)(context->fg_color >> 16) &
-          0xFF;
-        uint8_t g =
-          (uint8_t)(context->fg_color >> 8) &
-          0xFF;
-        uint8_t b = (uint8_t)context->fg_color;
-        nighterm_priv___putpixel(context,
-          col * context->font_header.width + x,
-          row * context->font_header.height +
-            y,
-          r,
-          g,
-          b);
-      } else {
-        uint8_t r =
-          (uint8_t)(context->bg_color >> 16) &
-          0xFF;
-        uint8_t g =
-          (uint8_t)(context->bg_color >> 8) &
-          0xFF;
-        uint8_t b = (uint8_t)context->bg_color;
-        nighterm_priv___putpixel(context,
-          col * context->font_header.width + x,
-          row * context->font_header.height +
-            y,
-          r,
-          g,
-          b);
-      }
-    }
-  }
+  nighterm_flush_backbuffer(context);
 }
 
 /**
@@ -457,10 +391,6 @@ nighterm_write(struct nighterm_ctx *context, char c)
       context->cur_x += NIGHTERM_INDENT_WIDTH;
       break;
     case '\b':
-      nighterm_render_char(context, context->cur_y,
-                           context->cur_x,
-                           ' ');
-
       // this should be handled better
       // for now, try not to use \b.
       context->cur_x -= 1;
@@ -474,10 +404,10 @@ nighterm_write(struct nighterm_ctx *context, char c)
         context->cur_x = 0;
         context->cur_y++;
       }
-      nighterm_render_char(context, context->cur_y,
-                           context->cur_x,
-                           c);
+      // printc
       context->cur_x++;
       break;
   }
+
+  nighterm_flush_backbuffer(context);
 }
