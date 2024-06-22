@@ -1,6 +1,9 @@
 # Nighterm Extended
 An awesome terminal emulator 
 
+> [!WARNING]
+> NEx is **NOT** ready for use yet. A lot of important features are missing, and will not be added since a complete rewrite is to be written.
+
 ## Usage
 
 > [!NOTE]  
