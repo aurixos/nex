@@ -31,7 +31,6 @@ nighterm_init(context,
                 framebuffer_response->address,
                 framebuffer_response->width,
                 framebuffer_response->height,
-                framebuffer_response->pitch,
                 framebuffer_response->bpp
                 kmalloc,
                 kfree);
