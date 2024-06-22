@@ -16,6 +16,15 @@
 #endif
 
 /**
+ * @brief Default maximum framebuffer size if dynamic memory allocation
+ *        is not available.
+ */
+#ifndef NIGHTERM_MALLOC_IS_AVAILABLE
+#define NIGHTERM_MAX_FB_WIDTH 1920
+#define NIGHTERM_MAX_FB_HEIGHT 1080
+#endif
+
+/**
  * @brief Memory allocator function pointer.
  */
 typedef void* (*nighterm_malloc)(size_t);
@@ -39,7 +48,7 @@ struct nighterm_ctx
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
   uint8_t *backbuffer;
 #else
-  uint8_t backbuffer[1920*1080*4];
+  uint8_t backbuffer[NIGHTERM_MAX_FB_WIDTH * NIGHTERM_MAX_FB_HEIGHT * 4];
 #endif
 
   void* font_data;

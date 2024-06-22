@@ -163,6 +163,12 @@ nighterm_initialize(struct nighterm_ctx *config,
 
 #ifdef NIGHTERM_MALLOC_IS_AVAILABLE
   config->backbuffer = (uint8_t *)malloc((config->fb_height * config->fb_width) * sizeof(uint32_t));
+#else
+  if (framebuffer_width > NIGHTERM_MAX_FB_WIDTH ||
+      framebuffer_height > NIGHTERM_MAX_FB_HEIGHT) {
+    config->fb_width = NIGHTERM_MAX_FB_WIDTH;
+    config->fb_height = NIGHTERM_MAX_FB_HEIGHT;
+  }
 #endif
 
   // config->rows = (config->fb_height / config->font_header.height);
